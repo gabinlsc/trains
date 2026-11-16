@@ -2,6 +2,14 @@ import type { Step } from '../pipeline.ts';
 import { SOURCES } from '../sources.ts';
 import { buildBoundaries } from './boundaries.ts';
 import { buildAdminUnits, buildCommunes } from './communes.ts';
+import {
+  buildElevationGrid,
+  GRID_SPEC,
+  loadTiles,
+  TERRARIUM_ZOOM,
+  tileRange,
+  tileUrl,
+} from './elevation.ts';
 import { FOREIGN_CITIES } from './foreign-cities.ts';
 import { buildGares } from './gares.ts';
 import { buildRivers, HydroPageSchema, hydrographyPageUrl, WFS_PAGE_SIZE } from './hydrography.ts';
@@ -82,6 +90,30 @@ export const protectedAreasStep: Step = {
   },
 };
 
+export const elevationStep: Step = {
+  id: 'altitude',
+  async run(io) {
+    const range = tileRange(GRID_SPEC, TERRARIUM_ZOOM);
+    const tiles: { x: number; y: number; url: string }[] = [];
+    for (let x = range.minX; x <= range.maxX; x++) {
+      for (let y = range.minY; y <= range.maxY; y++) {
+        tiles.push({ x, y, url: tileUrl(SOURCES.altitude.url, TERRARIUM_ZOOM, x, y) });
+      }
+    }
+    io.log(`  ${tiles.length} tuiles, grille ${GRID_SPEC.cols} × ${GRID_SPEC.rows}`);
+    const files = await io.files(
+      SOURCES.altitude,
+      tiles.map((t) => t.url),
+      'png',
+    );
+    const store = await loadTiles(
+      tiles.map((t, i) => ({ x: t.x, y: t.y, path: (files[i] as { path: string }).path })),
+    );
+    const grid = buildElevationGrid(store);
+    await io.write('altitude.bin', grid, GRID_SPEC.cols * GRID_SPEC.rows);
+  },
+};
+
 /** Ordre d'exécution : les étapes sont indépendantes, l'ordre ne sert qu'aux journaux. */
 export const STEPS: readonly Step[] = [
   communesStep,
@@ -90,4 +122,5 @@ export const STEPS: readonly Step[] = [
   boundariesStep,
   hydrographyStep,
   protectedAreasStep,
+  elevationStep,
 ];
