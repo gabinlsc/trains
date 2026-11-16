@@ -229,3 +229,24 @@ MapLibre.
 **Conséquences.** Aucune dépendance de décodage côté client. À réévaluer si
 une couche dépasse quelques dizaines de Mo (FlatGeobuf ou tuiles vectorielles
 dédiées).
+
+## ADR-015 — Grille d'altitude binaire dédiée, lue par le moteur
+
+**Contexte.** Le moteur a besoin de l'altitude en tout point pour les
+pentes, le profil en long, les tunnels et viaducs proposés, et les coûts ;
+il tourne dans le navigateur et sur le serveur. Un MNT IGN au pas de 25 m
+pèserait des gigaoctets.
+
+**Décision.** Grille géographique régulière d'environ 245 m (1/320° ×
+1/450°), en entiers 16 bits, précédée d'un en-tête de 64 octets
+auto-descriptif (signature, dimensions, emprise, pas). Encodage, décodage et
+échantillonnage bilinéaire sont dans `packages/engine/src/elevation.ts`,
+réutilisé par le pipeline : un seul format, une seule implémentation.
+Source : tuiles Terrarium, ouvertes et sans clé.
+
+**Conséquences.** 48 Mo bruts (26 Mo compressés) : adapté au serveur, trop
+lourd pour un chargement complet par le navigateur. La stratégie côté client
+(tuilage de la grille ou échantillonnage par l'API) sera tranchée avec le
+profil en long. `erasableSyntaxOnly` est activé dans TypeScript pour que le
+moteur reste exécutable tel quel par Node et les outils qui ne font
+qu'effacer les types.
