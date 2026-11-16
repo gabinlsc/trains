@@ -21,5 +21,12 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   WAL avec migrations Kysely, en-têtes de sécurité, limitation de débit,
   corps de requête bornés, logs JSON pino, et `GET /api/health` (version,
   commit, état de la base et des données).
+- `deploy.sh` : déploiement en une commande, idempotent, avec releases
+  atomiques, sauvegarde SQLite avant migration, unité systemd durcie, vhost
+  Nginx dédié vérifié par `nginx -t`, certificat Let's Encrypt, contrôle
+  ufw, healthcheck et rollback automatique ; options `--skip-ssl`,
+  `--skip-data`, `--rollback`, `--status`.
+- Test de bout en bout du déploiement dans Ubuntu 24.04 + systemd (job CI
+  `deploy-test`) et guide `docs/DEPLOIEMENT.md`.
 - `apps/web` : application Vite + Svelte 5, page « bientôt disponible »
   avec catalogue de traductions typé, thèmes clair et sombre.

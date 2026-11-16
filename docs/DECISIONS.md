@@ -144,3 +144,54 @@ fichiers statiques et des tuiles, et ne les ajoute pas sur `/api/`.
 **Conséquences.** Chaque réponse porte exactement un jeu d'en-têtes ; les
 tests de l'API vérifient les siens, et un contrôle du vhost vérifie ceux de
 Nginx.
+
+## ADR-010 — Releases immuables et bascule par lien symbolique
+
+**Contexte.** Le serveur héberge d'autres sites ; un déploiement raté ne
+doit jamais laisser Rails de France dans un état intermédiaire, et le retour
+arrière doit être immédiat.
+
+**Décision.** Chaque commit déployé est extrait (`git archive`) dans
+`/opt/trains/releases/<horodatage>-<sha>`, installé et construit sur place.
+Le lien `current` n'est basculé (renommage atomique) qu'après un build
+réussi et des migrations appliquées. Le healthcheck vérifie que l'API sert
+bien le commit attendu ; sinon, retour automatique à la release précédente.
+Un commit déjà en service n'est pas reconstruit, le service n'est pas
+redémarré et aucune sauvegarde n'est créée : la relance est sans effet.
+
+**Conséquences.** Rollback en une seconde (`--rollback`), au prix de
+l'espace disque de `KEEP_RELEASES` releases (quelques centaines de Mo
+chacune, `node_modules` compris ; le store pnpm partagé limite les
+téléchargements). Les migrations doivent rester compatibles avec la release
+précédente, puisque le rollback ne restaure pas la base.
+
+## ADR-011 — Node.js système via NodeSource, avec garde-fou
+
+**Contexte.** Node.js 22 est requis ; d'autres applications du serveur
+peuvent dépendre d'une autre version installée globalement.
+
+**Décision.** Node.js n'est installé (dépôt NodeSource) que s'il est absent
+ou plus ancien que la version 22. Si une autre version majeure est
+présente, le script liste les services systemd et pm2 qui semblent
+l'utiliser et exige une confirmation explicite (`--yes` en non interactif).
+pnpm est fourni par corepack, à la version épinglée dans `package.json`.
+
+**Conséquences.** Aucune mise à niveau silencieuse de Node.js. Si une
+application tierce impose une version plus ancienne, la voie de
+contournement est un Node.js dédié (non automatisée, documentée dans
+`DEPLOIEMENT.md`).
+
+## ADR-012 — Test du déploiement dans un conteneur systemd
+
+**Contexte.** `deploy.sh` est un livrable critique qui manipule systemd et
+Nginx ; ShellCheck ne détecte pas les erreurs de comportement.
+
+**Décision.** `deploy/test/run.sh` lance Ubuntu 24.04 avec systemd comme
+PID 1 dans Docker et rejoue : installation, relance (configuration
+strictement identique, aucune release, sauvegarde ni redémarrage
+supplémentaire), mise à jour, release défectueuse (rollback automatique),
+puis rollback manuel. Le job CI `deploy-test` l'exécute sur chaque PR.
+
+**Conséquences.** Environ 4 minutes de CI par PR. HTTPS et données ne sont
+pas couverts (`--skip-ssl --skip-data`) : ils dépendent du DNS réel et de
+téléchargements volumineux.
