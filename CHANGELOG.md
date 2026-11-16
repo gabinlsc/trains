@@ -15,3 +15,5 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - `packages/engine` : primitives géodésiques (distance, longueur, cap, rayon
   de courbure) avec un seuil de couverture de 80 %.
 - Garde-fou `scripts/check-clean.sh` branché sur le hook `pre-push`.
+- Intégration continue GitHub Actions : `lint`, `typecheck`, `test`, `build`,
+  `shellcheck` et `check-clean` sur chaque PR, avec cache pnpm.
