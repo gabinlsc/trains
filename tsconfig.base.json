@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "isolatedModules": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,

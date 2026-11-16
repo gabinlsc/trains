@@ -84,6 +84,16 @@ export const SOURCES = {
     // Ressource horodatée, donc immuable : toute modification est une anomalie.
     sha256: '08079d80a0badec10304044a883ed00630f5bfd7a9f23d28e0bec64eedd597c3',
   },
+  altitude: {
+    id: 'altitude',
+    title: 'Altitude : tuiles Terrarium au zoom 9',
+    producer:
+      'Terrain Tiles (AWS Open Data) : EU-DEM (Copernicus), SRTM et GMTED2010 (USGS), ETOPO1 (NOAA)',
+    license:
+      'Données ouvertes avec attribution (EU-DEM : Copernicus ; SRTM, GMTED2010, ETOPO1 : domaine public)',
+    // Modèle d'URL ; les tuiles sont listées par l'étape.
+    url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium',
+  },
 } as const satisfies Record<string, SourceDefinition>;
 
 export type SourceKey = keyof typeof SOURCES;

@@ -11,14 +11,14 @@ export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 /** Source injoignable ou réponse inexploitable : message destiné à l'opérateur. */
 export class SourceUnavailableError extends Error {
-  constructor(
-    readonly sourceId: string,
-    readonly url: string,
-    reason: string,
-    options?: ErrorOptions,
-  ) {
+  readonly sourceId: string;
+  readonly url: string;
+
+  constructor(sourceId: string, url: string, reason: string, options?: ErrorOptions) {
     super(`Source « ${sourceId} » indisponible (${url}) : ${reason}`, options);
     this.name = 'SourceUnavailableError';
+    this.sourceId = sourceId;
+    this.url = url;
   }
 }
 

@@ -19,6 +19,9 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   cours d'eau de plus de 15 m de large (IGN BD CARTO, via le WFS de la
   Géoplateforme, pagination et raccordement des tronçons), cœurs et aires
   d'adhésion des parcs nationaux (Parcs nationaux de France).
+- Grille d'altitude d'environ 245 m sur toute l'emprise, à partir des tuiles
+  Terrarium ; format binaire et échantillonnage bilinéaire dans
+  `packages/engine`.
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
 
 ## [0.1.0] — 2026-11-16
