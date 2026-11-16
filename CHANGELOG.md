@@ -7,6 +7,16 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- `packages/data` : pipeline de données ouvertes versionné (`DATA_VERSION`),
+  téléchargements avec reprises, cache vérifié par SHA-256, validation Zod,
+  publication atomique avec manifeste et verrou.
+- Communes et populations légales, départements et régions avec
+  chefs-lieux (INSEE), gares de voyageurs (SNCF), lignes du réseau ferré
+  national par statut (SNCF Réseau), villes frontalières.
+- `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
+
 ## [0.1.0] — 2026-11-16
 
 Phase 0 — Fondations : le projet est outillé, testé et déployable.

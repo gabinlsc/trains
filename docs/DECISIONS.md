@@ -195,3 +195,37 @@ puis rollback manuel. Le job CI `deploy-test` l'exécute sur chaque PR.
 **Conséquences.** Environ 4 minutes de CI par PR. HTTPS et données ne sont
 pas couverts (`--skip-ssl --skip-data`) : ils dépendent du DNS réel et de
 téléchargements volumineux.
+
+## ADR-013 — Pipeline de données versionné, généré au déploiement
+
+**Contexte.** Les données ouvertes pèsent de quelques Mo à plusieurs Go et
+évoluent indépendamment du code ; elles ne doivent pas être versionnées dans
+Git, mais chaque génération doit rester traçable.
+
+**Décision.** `packages/data` est un programme Node (compilé par tsup comme
+le serveur) qui télécharge chaque source avec reprises et cache vérifié,
+valide les réponses par Zod, transforme en fonctions pures et écrit un
+`manifest.json` (URL, date, SHA-256, tailles, comptes). Une constante
+`DATA_VERSION` décide de la régénération ; la publication est atomique
+(dossier de travail renommé, lien `current`).
+
+**Conséquences.** Un déploiement sans changement de données ne télécharge
+rien. Une source indisponible fait échouer le pipeline avec un message clair
+et laisse la génération précédente en service. Les sources dynamiques (API)
+ne sont pas strictement reproductibles octet pour octet : le manifeste
+conserve l'empreinte de ce qui a réellement été utilisé.
+
+## ADR-014 — Formats de sortie : JSON colonnaire et GeoJSON simplifié
+
+**Contexte.** Le front charge ces fichiers au démarrage de la carte ; le
+budget de performance est serré. FlatGeobuf était envisagé.
+
+**Décision.** Points (communes, gares) en tableau colonnaire JSON, lignes et
+surfaces en GeoJSON simplifié (Douglas-Peucker) aux coordonnées arrondies à
+5 décimales. Altitude en grille binaire dédiée. Pas de FlatGeobuf pour ces
+volumes : quelques Mo compressés par Nginx, directement consommables par
+MapLibre.
+
+**Conséquences.** Aucune dépendance de décodage côté client. À réévaluer si
+une couche dépasse quelques dizaines de Mo (FlatGeobuf ou tuiles vectorielles
+dédiées).
