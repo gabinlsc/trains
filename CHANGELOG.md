@@ -22,7 +22,17 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Grille d'altitude d'environ 245 m sur toute l'emprise, à partir des tuiles
   Terrarium ; format binaire et échantillonnage bilinéaire dans
   `packages/engine`.
+- Fond de carte auto-hébergé : extraction de l'emprise France (zoom 13)
+  depuis l'archive mondiale Protomaps par requêtes Range, glyphes et sprites
+  auto-hébergés, rafraîchissement tous les 90 jours (commande `basemap`).
+- Nginx sert les données publiées sous `/data/` (cache immuable par version)
+  et le fond de carte sous `/tiles/`.
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
+
+### Modifié
+
+- Un échec du pipeline de données ou du fond de carte n'interrompt plus le
+  déploiement : la génération précédente reste en service.
 
 ## [0.1.0] — 2026-11-16
 

@@ -29,8 +29,24 @@ Barcelone…) : liste établie à la main dans
 `packages/data/src/steps/foreign-cities.ts`, avec la population de la ville
 centre arrondie au millier d'après les offices statistiques nationaux.
 
-Source à venir (même pipeline) : fond de carte (Protomaps, d'après
-OpenStreetMap).
+### Fond de carte
+
+Le fond de carte vectoriel est un extrait de l'archive mondiale Protomaps
+(build quotidien, d'après OpenStreetMap), limité à l'emprise de travail et
+au zoom 13. Il est produit par la commande `basemap`, distincte du pipeline
+versionné :
+
+| Élément                             | Source                                                                                                                    | Licence                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `tiles/france.pmtiles` (≈ 2,5–3 Go) | `build.protomaps.com/<AAAAMMJJ>.pmtiles`, dernier build au schéma v4 listé par `build-metadata.protomaps.dev/builds.json` | ODbL (© contributeurs OpenStreetMap), Protomaps |
+| `tiles/assets/fonts/`               | glyphes Noto Sans (Regular, Medium, Italic), `protomaps.github.io/basemaps-assets`                                        | SIL Open Font License 1.1                       |
+| `tiles/assets/sprites/v4/`          | sprites clair et sombre, même dépôt                                                                                       | BSD 3 clauses (Protomaps)                       |
+
+L'extraction lit l'archive mondiale par requêtes HTTP Range : seules les
+tuiles de l'emprise sont téléchargées. `tiles/france.json` décrit l'extrait
+en service (build, schéma, date, empreinte SHA-256, nombre de tuiles) ; il
+est refait si l'extrait manque, a plus de 90 jours, change de schéma, de
+zoom maximal ou d'emprise.
 
 ### Choix et limites
 
@@ -120,7 +136,8 @@ contient déjà un manifeste valide ; sinon il régénère tout.
 
 ```bash
 pnpm --filter @trains/data build
-DATA_DIR=./.local/data pnpm --filter @trains/data run pipeline           # --force pour régénérer
+DATA_DIR=./.local/data pnpm --filter @trains/data run pipeline   # --force pour régénérer
+DATA_DIR=./.local/data pnpm --filter @trains/data run basemap    # fond de carte, --force idem
 ```
 
 ## Licences et attributions
@@ -135,6 +152,9 @@ DATA_DIR=./.local/data pnpm --filter @trains/data run pipeline           # --for
   the European Union – EU-DEM layers », « SRTM and GMTED2010 data courtesy of
   the U.S. Geological Survey », « ETOPO1 : NOAA National Centers for
   Environmental Information », via Terrain Tiles (AWS Open Data).
+
+- **Fond de carte** : « © contributeurs OpenStreetMap » (ODbL) et
+  « Protomaps ».
 
 Ces mentions sont affichées en permanence sur la carte et détaillées sur la
 page « Attributions des données ».
