@@ -15,6 +15,8 @@ export interface SourceDefinition {
 
 const SNCF = 'https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets';
 const GEO_API = 'https://geo.api.gouv.fr';
+const CONTOURS = 'https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025/geojson';
+const IGN_WFS = 'https://data.geopf.fr/wfs/ows';
 
 export const SOURCES = {
   communes: {
@@ -51,6 +53,36 @@ export const SOURCES = {
     producer: 'SNCF Réseau',
     license: 'ODbL 1.0',
     url: `${SNCF}/lignes-par-statut/exports/geojson?select=code_ligne,lib_ligne,statut,rg_troncon,geo_shape`,
+  },
+  contoursRegions: {
+    id: 'contours-regions',
+    title: 'Contours des régions (généralisés à 100 m)',
+    producer: 'Etalab, d’après IGN Admin Express',
+    license: 'Licence Ouverte 2.0 (Etalab)',
+    url: `${CONTOURS}/regions-100m.geojson.gz`,
+  },
+  contoursDepartements: {
+    id: 'contours-departements',
+    title: 'Contours des départements (généralisés à 100 m)',
+    producer: 'Etalab, d’après IGN Admin Express',
+    license: 'Licence Ouverte 2.0 (Etalab)',
+    url: `${CONTOURS}/departements-100m.geojson.gz`,
+  },
+  coursEau: {
+    id: 'cours-eau',
+    title: 'Tronçons hydrographiques de plus de 15 m de large',
+    producer: 'IGN, BD CARTO (Géoplateforme)',
+    license: 'Licence Ouverte 2.0 (Etalab)',
+    url: `${IGN_WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDCARTO_V5:troncon_hydrographique`,
+  },
+  parcsNationaux: {
+    id: 'parcs-nationaux',
+    title: 'Contours des 11 parcs nationaux (cœurs et aires d’adhésion)',
+    producer: 'Parcs nationaux de France (OFB)',
+    license: 'Licence Ouverte 2.0 (Etalab)',
+    url: 'https://static.data.gouv.fr/resources/contours-des-11-parcs-nationaux-de-france/20260211-094019/pnx-coeur-aa-ama.geojson',
+    // Ressource horodatée, donc immuable : toute modification est une anomalie.
+    sha256: '08079d80a0badec10304044a883ed00630f5bfd7a9f23d28e0bec64eedd597c3',
   },
 } as const satisfies Record<string, SourceDefinition>;
 

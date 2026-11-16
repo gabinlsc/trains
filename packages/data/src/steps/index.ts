@@ -1,8 +1,11 @@
 import type { Step } from '../pipeline.ts';
 import { SOURCES } from '../sources.ts';
+import { buildBoundaries } from './boundaries.ts';
 import { buildAdminUnits, buildCommunes } from './communes.ts';
 import { FOREIGN_CITIES } from './foreign-cities.ts';
 import { buildGares } from './gares.ts';
+import { buildRivers, HydroPageSchema, hydrographyPageUrl, WFS_PAGE_SIZE } from './hydrography.ts';
+import { buildProtectedAreas } from './protected-areas.ts';
 import { buildRailLines } from './rail-lines.ts';
 
 const json = (value: unknown): string => JSON.stringify(value);
@@ -39,5 +42,52 @@ export const railLinesStep: Step = {
   },
 };
 
+export const boundariesStep: Step = {
+  id: 'limites-administratives',
+  async run(io) {
+    const regions = buildBoundaries(await io.gzipJson(SOURCES.contoursRegions));
+    await io.write('limites-regions.geojson', json(regions), regions.features.length);
+    const departements = buildBoundaries(await io.gzipJson(SOURCES.contoursDepartements));
+    await io.write(
+      'limites-departements.geojson',
+      json(departements),
+      departements.features.length,
+    );
+  },
+};
+
+export const hydrographyStep: Step = {
+  id: 'cours-eau',
+  async run(io) {
+    // La première page donne le nombre total d'objets, d'où les pages suivantes.
+    const first = await io.json(SOURCES.coursEau, hydrographyPageUrl(SOURCES.coursEau.url, 0));
+    const total = HydroPageSchema.parse(first).numberMatched;
+    const urls: string[] = [];
+    for (let start = WFS_PAGE_SIZE; start < total; start += WFS_PAGE_SIZE) {
+      urls.push(hydrographyPageUrl(SOURCES.coursEau.url, start));
+    }
+    io.log(`  ${total} tronçons, ${urls.length + 1} pages`);
+    const pages = [first];
+    for (const url of urls) pages.push(await io.json(SOURCES.coursEau, url));
+    const rivers = buildRivers(pages);
+    await io.write('cours-eau.geojson', json(rivers), rivers.features.length);
+  },
+};
+
+export const protectedAreasStep: Step = {
+  id: 'parcs-nationaux',
+  async run(io) {
+    const parks = buildProtectedAreas(await io.json(SOURCES.parcsNationaux));
+    await io.write('parcs-nationaux.geojson', json(parks), parks.features.length);
+  },
+};
+
 /** Ordre d'exécution : les étapes sont indépendantes, l'ordre ne sert qu'aux journaux. */
-export const STEPS: readonly Step[] = [communesStep, garesStep, railLinesStep];
+export const STEPS: readonly Step[] = [
+  communesStep,
+  garesStep,
+  railLinesStep,
+  boundariesStep,
+  hydrographyStep,
+  protectedAreasStep,
+];

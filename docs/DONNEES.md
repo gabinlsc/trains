@@ -11,22 +11,24 @@ URL et licences vérifiées le 16 novembre 2026. La liste exacte utilisée par
 une génération (URL, date de récupération, empreinte SHA-256, taille) figure
 dans son `manifest.json`.
 
-| Identifiant    | Contenu                                   | Producteur                                      | Licence             | Accès                                                |
-| -------------- | ----------------------------------------- | ----------------------------------------------- | ------------------- | ---------------------------------------------------- |
-| `communes`     | Communes, populations légales, centres    | INSEE, IGN (API Découpage administratif, DINUM) | Licence Ouverte 2.0 | `geo.api.gouv.fr/communes`                           |
-| `departements` | Départements et chefs-lieux (préfectures) | INSEE (API Découpage administratif)             | Licence Ouverte 2.0 | `geo.api.gouv.fr/departements`                       |
-| `regions`      | Régions et chefs-lieux                    | INSEE (API Découpage administratif)             | Licence Ouverte 2.0 | `geo.api.gouv.fr/regions`                            |
-| `gares`        | Gares de voyageurs (2 792)                | SNCF Gares & Connexions                         | ODbL 1.0            | `ressources.data.sncf.com`, jeu `gares-de-voyageurs` |
-| `lignes-rfn`   | Lignes du réseau ferré national et statut | SNCF Réseau                                     | ODbL 1.0            | `ressources.data.sncf.com`, jeu `lignes-par-statut`  |
+| Identifiant             | Contenu                                           | Producteur                                      | Licence             | Accès                                                                                         |
+| ----------------------- | ------------------------------------------------- | ----------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `communes`              | Communes, populations légales, centres            | INSEE, IGN (API Découpage administratif, DINUM) | Licence Ouverte 2.0 | `geo.api.gouv.fr/communes`                                                                    |
+| `departements`          | Départements et chefs-lieux (préfectures)         | INSEE (API Découpage administratif)             | Licence Ouverte 2.0 | `geo.api.gouv.fr/departements`                                                                |
+| `regions`               | Régions et chefs-lieux                            | INSEE (API Découpage administratif)             | Licence Ouverte 2.0 | `geo.api.gouv.fr/regions`                                                                     |
+| `gares`                 | Gares de voyageurs (2 792)                        | SNCF Gares & Connexions                         | ODbL 1.0            | `ressources.data.sncf.com`, jeu `gares-de-voyageurs`                                          |
+| `lignes-rfn`            | Lignes du réseau ferré national et statut         | SNCF Réseau                                     | ODbL 1.0            | `ressources.data.sncf.com`, jeu `lignes-par-statut`                                           |
+| `contours-regions`      | Contours des régions (généralisés à 100 m)        | Etalab, d'après IGN Admin Express               | Licence Ouverte 2.0 | `etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025`                               |
+| `contours-departements` | Contours des départements (100 m)                 | Etalab, d'après IGN Admin Express               | Licence Ouverte 2.0 | idem                                                                                          |
+| `cours-eau`             | Tronçons hydrographiques de plus de 15 m de large | IGN, BD CARTO (Géoplateforme, WFS)              | Licence Ouverte 2.0 | `data.geopf.fr/wfs`, couche `BDCARTO_V5:troncon_hydrographique`                               |
+| `parcs-nationaux`       | Cœurs et aires d'adhésion des parcs nationaux     | Parcs nationaux de France (OFB)                 | Licence Ouverte 2.0 | `static.data.gouv.fr`, jeu « Contours des 11 Parcs nationaux de France » (empreinte vérifiée) |
 
 Villes frontalières (Londres, Bruxelles, Genève, Bâle, Luxembourg, Turin,
 Barcelone…) : liste établie à la main dans
 `packages/data/src/steps/foreign-cities.ts`, avec la population de la ville
 centre arrondie au millier d'après les offices statistiques nationaux.
 
-Sources des phases suivantes (même pipeline) : limites administratives
-(Etalab, d'après IGN Admin Express), cours d'eau (IGN BD CARTO), parcs
-nationaux (Parcs nationaux de France), altitude (tuiles Terrarium), fond de
+Sources à venir (même pipeline) : altitude (tuiles Terrarium) et fond de
 carte (Protomaps, d'après OpenStreetMap).
 
 ### Choix et limites
@@ -42,6 +44,19 @@ carte (Protomaps, d'après OpenStreetMap).
   ne publient que des codes de ligne, pas de noms : le calque affiche donc le
   code. Le jeu date de 2022 côté producteur ; les ouvertures récentes peuvent
   manquer.
+- **Outre-mer** : les fichiers amont mêlent DROM et collectivités d'outre-mer
+  aux codes hétérogènes ; un objet est retenu si le centre de son emprise
+  tombe dans la zone de travail (métropole, Corse, villes frontalières).
+- **Cours d'eau** : seuls les tronçons de plus de 15 m de large (classes
+  « Entre 15 et 50 m » et « Plus de 50 m » de la BD CARTO), non fictifs, sont
+  retenus : ce sont ceux qui imposent un pont significatif. Les 85 000
+  tronçons sont raccordés bout à bout par cours d'eau et classe de largeur,
+  puis simplifiés (≈ 10 m), ce qui donne environ 7 000 lignes.
+- **Parcs nationaux** : seuls les zonages terrestres sont retenus. Le cœur
+  interdit toute construction, l'aire d'adhésion impose un surcoût. Les
+  zonages marins et les parcs d'outre-mer sont écartés. Les autres espaces
+  protégés (réserves naturelles, Natura 2000) ne sont pas encore pris en
+  compte.
 - **Gares** : une gare peut cumuler plusieurs segments DRG (`A;B`) et
   plusieurs codes UIC ; on retient le segment le plus élevé et le premier
   code UIC comme identifiant.
@@ -98,7 +113,7 @@ DATA_DIR=./.local/data pnpm --filter @trains/data run pipeline           # --for
 ## Licences et attributions
 
 - **Licence Ouverte 2.0 (Etalab)** : réutilisation libre avec mention de la
-  source (« INSEE », « IGN », « Etalab »).
+  source (« INSEE », « IGN », « Etalab », « Parcs nationaux de France »).
 - **ODbL 1.0** (SNCF) : les bases dérivées (`gares.json`,
   `lignes-rfn.geojson`) restent sous ODbL et sont redistribuées avec la
   mention « © SNCF Gares & Connexions » et « © SNCF Réseau ».
