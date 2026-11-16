@@ -66,7 +66,8 @@ describe('generate', () => {
     );
     expect(manifest.dataVersion).toBe('2026.11.1');
     expect(manifest.sources).toHaveLength(1);
-    expect(manifest.sources[0]).toMatchObject({ id: 'essai', files: 2, bytes: 10 });
+    // La page JSON et les deux tuiles sont cumulées sous la même source.
+    expect(manifest.sources[0]).toMatchObject({ id: 'essai', files: 3, bytes: 17 });
     expect(manifest.outputs.map((o) => [o.file, o.count])).toEqual([
       ['sortie.json', 3],
       ['tuiles.bin', 2],
