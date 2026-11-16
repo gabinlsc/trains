@@ -9,11 +9,13 @@
     "pipeline": "node dist/cli.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "basemap": "node dist/basemap-cli.js"
   },
   "dependencies": {
     "@trains/engine": "workspace:*",
     "@trains/shared": "workspace:*",
+    "pmtiles": "^4.5.0",
     "pngjs": "^7.0.0",
     "zod": "^4.6.7"
   },
