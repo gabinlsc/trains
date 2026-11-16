@@ -859,7 +859,14 @@ rollback_after_failure() {
     warn "Rollback automatique vers $(basename "$PREVIOUS_RELEASE")"
     ln -sfn "$PREVIOUS_RELEASE" "$APP_DIR/current.tmp"
     mv -Tf "$APP_DIR/current.tmp" "$APP_DIR/current"
+    # Les plantages en boucle ont pu atteindre la limite de redémarrage de systemd.
+    systemctl reset-failed "$SERVICE" 2>/dev/null || true
     systemctl restart "$SERVICE" || true
+    if wait_for_health "http://127.0.0.1:${PORT}/api/health" 15 >/dev/null; then
+      warn "Release précédente rétablie et en bonne santé."
+    else
+      _log "$C_RED" "✖ La release précédente ne répond pas non plus : intervention manuelle requise." >&2
+    fi
   else
     warn "Aucune release précédente : pas de rollback possible."
   fi

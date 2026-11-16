@@ -116,6 +116,7 @@ git -C "$WORK/clone" -c user.name=test -c user.email=test@example.invalid \
 git -C "$WORK/clone" push --quiet origin "$BRANCH"
 if deploy >"$WORK/broken.log" 2>&1; then fail "le déploiement d'une release défectueuse aurait dû échouer"; fi
 grep -q 'Rollback automatique' "$WORK/broken.log" || fail "rollback automatique absent"
+grep -q 'Release précédente rétablie' "$WORK/broken.log" || fail "release précédente non rétablie"
 [[ "$(in_box 'readlink -f /opt/trains/current')" == "$before" ]] ||
   fail "current ne pointe pas sur la release saine"
 in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q "\"commit\":\"${new_sha}\"" ||
