@@ -142,7 +142,7 @@ echo "▶ Rollback"
 deploy --rollback
 [[ "$(in_box 'readlink -f /opt/trains/current')" == "$(echo "$first" | tail -1)" ]] ||
   fail "le rollback n'est pas revenu à la première release"
-in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"status":"degraded"' ||
+in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"database":{"status":"ok"' ||
   fail "service KO après rollback"
 
 echo "✔ deploy.sh validé : installation, idempotence, mise à jour et rollback."
