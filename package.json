@@ -1,0 +1,42 @@
+{
+  "name": "rails-de-france",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rails de France : construire des réseaux ferroviaires sur la carte réelle de la France.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12.0 <23 || >=24"
+  },
+  "scripts": {
+    "prepare": "node scripts/install-hooks.mjs",
+    "build": "pnpm -r --if-present run build",
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "test:coverage": "pnpm -r --if-present run test:coverage",
+    "check:clean": "bash scripts/check-clean.sh",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm check:clean"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec prettier --check --ignore-unknown --no-error-on-unmatched-pattern $(git diff --cached --name-only --diff-filter=ACMR)",
+    "pre-push": "bash scripts/check-clean.sh"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "^5.1.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "simple-git-hooks": "^2.14.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}
