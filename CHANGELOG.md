@@ -7,6 +7,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [0.1.0] — 2026-11-16
+
+Phase 0 — Fondations : le projet est outillé, testé et déployable.
+
 ### Ajouté
 
 - Monorepo pnpm (`apps/*`, `packages/*`), TypeScript strict, ESLint, Prettier, Vitest.
@@ -30,3 +34,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   `deploy-test`) et guide `docs/DEPLOIEMENT.md`.
 - `apps/web` : application Vite + Svelte 5, page « bientôt disponible »
   avec catalogue de traductions typé, thèmes clair et sombre.
+
+### Corrigé
+
+- Le hook `pre-commit` n'échoue plus quand aucun fichier n'est indexé.
+
+[Non publié]: https://github.com/gabinlsc/trains/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gabinlsc/trains/releases/tag/v0.1.0
