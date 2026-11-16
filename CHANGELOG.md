@@ -17,3 +17,9 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Garde-fou `scripts/check-clean.sh` branché sur le hook `pre-push`.
 - Intégration continue GitHub Actions : `lint`, `typecheck`, `test`, `build`,
   `shellcheck` et `check-clean` sur chaque PR, avec cache pnpm.
+- `apps/server` : API Fastify, configuration validée par Zod, SQLite en mode
+  WAL avec migrations Kysely, en-têtes de sécurité, limitation de débit,
+  corps de requête bornés, logs JSON pino, et `GET /api/health` (version,
+  commit, état de la base et des données).
+- `apps/web` : application Vite + Svelte 5, page « bientôt disponible »
+  avec catalogue de traductions typé, thèmes clair et sombre.
