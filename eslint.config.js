@@ -1,6 +1,8 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import svelte from 'eslint-plugin-svelte';
 import tseslint from 'typescript-eslint';
+import svelteConfig from './apps/web/svelte.config.js';
 
 export default tseslint.config(
   {
@@ -23,7 +25,7 @@ export default tseslint.config(
       globals: { ...globals.node },
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', '*.mjs', 'scripts/*.mjs'],
+          allowDefaultProject: ['*.js', '*.mjs', 'scripts/*.mjs', 'apps/web/svelte.config.js'],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -42,6 +44,22 @@ export default tseslint.config(
       eqeqeq: ['error', 'always'],
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
+  },
+  ...svelte.configs.recommended,
+  {
+    files: ['**/*.svelte', '**/*.svelte.ts'],
+    languageOptions: {
+      globals: { ...globals.browser },
+      parserOptions: {
+        parser: tseslint.parser,
+        extraFileExtensions: ['.svelte'],
+        svelteConfig,
+      },
+    },
+  },
+  {
+    files: ['apps/web/src/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
   },
   {
     files: ['**/*.js', '**/*.mjs'],
