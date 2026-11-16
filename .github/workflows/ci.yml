@@ -100,6 +100,20 @@ jobs:
           fi
           shellcheck --severity=style "${scripts[@]}"
 
+  deploy-test:
+    name: deploy-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Inutile de monter un conteneur systemd si seule la doc a changé.
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'docs/')
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Le test pousse HEAD dans un dépôt nu : l'historique doit être complet.
+          fetch-depth: 0
+      - name: Déploiement dans Ubuntu 24.04 (installation, idempotence, mise à jour, rollback)
+        run: bash deploy/test/run.sh
+
   check-clean:
     name: check-clean
     runs-on: ubuntu-24.04
