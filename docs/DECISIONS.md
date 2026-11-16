@@ -63,3 +63,21 @@ définis, et n'échoue jamais.
 
 **Conséquences.** Le même `pnpm install --frozen-lockfile` fonctionne en
 local, en CI et sur le serveur.
+
+## ADR-005 — CI en jobs parallèles et indépendants
+
+**Contexte.** Le merge n'est autorisé que si toutes les vérifications sont
+vertes ; une règle de protection de branche s'appuie sur des noms de checks
+stables.
+
+**Décision.** Un workflow `CI` unique, un job par vérification (`lint`,
+`typecheck`, `test`, `build`, `shellcheck`, `check-clean`, puis `e2e` et
+`deploy-test` quand ils existeront). Chaque job installe ses dépendances avec
+le cache pnpm de `actions/setup-node`. Le garde-fou s'exécute sur le commit de
+tête de la PR avec l'historique complet. Pas de mises à jour automatiques de
+dépendances : les commits générés par ces robots portent des trailers que le
+dépôt refuse ; les montées de version se font par PR manuelle.
+
+**Conséquences.** Retour rapide et lisible (le job en échec dit quoi
+corriger), au prix de quelques installations redondantes, amorties par le
+cache. Les noms de jobs servent de checks requis sur `main`.
