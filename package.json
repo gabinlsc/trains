@@ -24,7 +24,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm check:clean"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec prettier --check --ignore-unknown --no-error-on-unmatched-pattern $(git diff --cached --name-only --diff-filter=ACMR)",
+    "pre-commit": "bash scripts/pre-commit.sh",
     "pre-push": "bash scripts/check-clean.sh"
   },
   "devDependencies": {
