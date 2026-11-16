@@ -65,15 +65,18 @@ carte (Protomaps, d'après OpenStreetMap).
 
 Pour chaque génération, dans `DATA_DIR/data/<data-version>/` :
 
-| Fichier                  | Format                              | Contenu                                                                                                                    |
-| ------------------------ | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `communes.json`          | tableau colonnaire `{fields, rows}` | code INSEE, nom, département, population, longitude, latitude ; trié par population décroissante                           |
-| `departements.json`      | JSON                                | code, nom, région, chef-lieu (code, nom, position)                                                                         |
-| `regions.json`           | JSON                                | code, nom, chef-lieu                                                                                                       |
-| `gares.json`             | tableau colonnaire                  | UIC, nom, trigramme, segment, commune, position                                                                            |
-| `lignes-rfn.geojson`     | GeoJSON                             | tronçons simplifiés (tolérance ≈ 5 m), propriétés `code`, `status` (`open`, `neutralised`, `closed`) et `statut` d'origine |
-| `villes-etrangeres.json` | JSON                                | villes frontalières                                                                                                        |
-| `manifest.json`          | JSON                                | version, date, sources et sorties avec empreintes                                                                          |
+| Fichier                                                   | Format                              | Contenu                                                                                                                    |
+| --------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `communes.json`                                           | tableau colonnaire `{fields, rows}` | code INSEE, nom, département, population, longitude, latitude ; trié par population décroissante                           |
+| `departements.json`                                       | JSON                                | code, nom, région, chef-lieu (code, nom, position)                                                                         |
+| `regions.json`                                            | JSON                                | code, nom, chef-lieu                                                                                                       |
+| `gares.json`                                              | tableau colonnaire                  | UIC, nom, trigramme, segment, commune, position                                                                            |
+| `lignes-rfn.geojson`                                      | GeoJSON                             | tronçons simplifiés (tolérance ≈ 5 m), propriétés `code`, `status` (`open`, `neutralised`, `closed`) et `statut` d'origine |
+| `villes-etrangeres.json`                                  | JSON                                | villes frontalières                                                                                                        |
+| `limites-regions.geojson`, `limites-departements.geojson` | GeoJSON                             | polygones, propriétés `code` et `nom`                                                                                      |
+| `cours-eau.geojson`                                       | GeoJSON                             | lignes, propriétés `nom` et `largeur` (1 : 15 à 50 m, 2 : plus de 50 m)                                                    |
+| `parcs-nationaux.geojson`                                 | GeoJSON                             | multipolygones, propriétés `nom` et `zone` (`coeur`, `adhesion`)                                                           |
+| `manifest.json`                                           | JSON                                | version, date, sources et sorties avec empreintes                                                                          |
 
 Les coordonnées sont en WGS84 (longitude, latitude), arrondies à 5
 décimales (environ 1 m). Le tableau colonnaire divise la taille par trois
