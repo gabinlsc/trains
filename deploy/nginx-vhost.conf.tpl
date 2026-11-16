@@ -41,6 +41,7 @@ server {
             application/vnd.pmtiles pmtiles;
             application/json json;
             application/x-protobuf pbf;
+            image/png png;
         }
         default_type application/octet-stream;
         # La compression casserait les requêtes Range.
@@ -48,6 +49,37 @@ server {
         etag on;
         add_header Cache-Control "public, max-age=86400" always;
         add_header Accept-Ranges bytes always;
+@SECURITY_HEADERS@
+    }
+
+    # Données publiées par le pipeline. Un dossier par version : contenu
+    # immuable, donc cache permanent ; « current » pointe sur la version en
+    # service et ne doit jamais être mis en cache.
+    location ^~ /data/. {
+        return 404;
+    }
+
+    location ^~ /data/current/ {
+        alias @DATA_DIR@/data/current/;
+        types {
+            application/json json;
+            application/geo+json geojson;
+            application/octet-stream bin;
+        }
+        gzip_types application/json application/geo+json application/octet-stream;
+        add_header Cache-Control "no-cache" always;
+@SECURITY_HEADERS@
+    }
+
+    location ^~ /data/ {
+        alias @DATA_DIR@/data/;
+        types {
+            application/json json;
+            application/geo+json geojson;
+            application/octet-stream bin;
+        }
+        gzip_types application/json application/geo+json application/octet-stream;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
 @SECURITY_HEADERS@
     }
 
