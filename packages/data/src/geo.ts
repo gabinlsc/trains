@@ -70,3 +70,33 @@ export function simplifyLine(points: readonly Position[], tolerance: number): Po
   }
   return points.filter((_, i) => keep[i] === 1).map((p) => [p[0], p[1]]);
 }
+
+/** Centre de l'emprise d'un ensemble de positions, quelle que soit leur imbrication. */
+export function bboxCenter(coordinates: unknown): Position | null {
+  let west = Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let north = -Infinity;
+  const visit = (node: unknown): void => {
+    if (!Array.isArray(node)) return;
+    if (typeof node[0] === 'number' && typeof node[1] === 'number') {
+      west = Math.min(west, node[0]);
+      east = Math.max(east, node[0]);
+      south = Math.min(south, node[1]);
+      north = Math.max(north, node[1]);
+      return;
+    }
+    for (const child of node) visit(child);
+  };
+  visit(coordinates);
+  return Number.isFinite(west) ? [(west + east) / 2, (south + north) / 2] : null;
+}
+
+/**
+ * Objet de la zone de travail (métropole, Corse) : plus robuste qu'une liste
+ * de codes, les fichiers amont mêlant DROM et collectivités d'outre-mer.
+ */
+export function isInWorkArea(coordinates: unknown): boolean {
+  const center = bboxCenter(coordinates);
+  return center !== null && inDataBbox(center);
+}

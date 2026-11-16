@@ -15,6 +15,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Communes et populations légales, départements et régions avec
   chefs-lieux (INSEE), gares de voyageurs (SNCF), lignes du réseau ferré
   national par statut (SNCF Réseau), villes frontalières.
+- Limites des régions et départements (Etalab, d'après IGN Admin Express),
+  cours d'eau de plus de 15 m de large (IGN BD CARTO, via le WFS de la
+  Géoplateforme, pagination et raccordement des tronçons), cœurs et aires
+  d'adhésion des parcs nationaux (Parcs nationaux de France).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
 
 ## [0.1.0] — 2026-11-16

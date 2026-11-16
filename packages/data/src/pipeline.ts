@@ -1,13 +1,19 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 import type { DataManifest, ManifestOutput, ManifestSource } from '@trains/shared';
 import { download, mapConcurrent, type Downloaded, type FetchLike } from './http.ts';
 import type { SourceDefinition } from './sources.ts';
 
 export interface StepIO {
-  /** Télécharge (ou reprend du cache) une source et la décode en JSON. */
-  json(source: SourceDefinition): Promise<unknown>;
+  /**
+   * Télécharge (ou reprend du cache) une source et la décode en JSON.
+   * `url` permet d'en lire une page particulière (API paginée).
+   */
+  json(source: SourceDefinition, url?: string): Promise<unknown>;
+  /** Décode un fichier JSON compressé en gzip. */
+  gzipJson(source: SourceDefinition): Promise<unknown>;
   /** Télécharge une source binaire et renvoie le fichier local. */
   file(source: SourceDefinition, extension: string): Promise<Downloaded>;
   /** Plusieurs fichiers agrégés sous une même source (ex. tuiles). */
@@ -45,13 +51,26 @@ function cacheName(url: string): string {
 /** Exécute les étapes dans `outDir` et y écrit manifest.json. */
 export async function runPipeline(options: PipelineOptions): Promise<DataManifest> {
   const { outDir, cacheDir, fetchImpl, backoffMs, log = () => undefined } = options;
-  const sources = new Map<string, ManifestSource>();
+  // Une source peut être téléchargée en plusieurs fois (pagination, tuiles) :
+  // ses fichiers sont cumulés puis résumés en une seule entrée du manifeste.
+  const downloads = new Map<string, { source: SourceDefinition; results: Downloaded[] }>();
   const outputs: ManifestOutput[] = [];
   await mkdir(outDir, { recursive: true });
 
   function record(source: SourceDefinition, results: readonly Downloaded[]): void {
-    const first = results[0];
-    if (!first) return;
+    const entry = downloads.get(source.id) ?? { source, results: [] };
+    entry.results.push(...results);
+    downloads.set(source.id, entry);
+  }
+
+  function summarize({
+    source,
+    results,
+  }: {
+    source: SourceDefinition;
+    results: Downloaded[];
+  }): ManifestSource {
+    const first = results[0] as Downloaded;
     // Plusieurs fichiers : l'empreinte agrège celles de chaque fichier, dans l'ordre.
     const sha256 =
       results.length === 1
@@ -59,7 +78,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
         : createHash('sha256')
             .update(results.map((r) => r.sha256).join('\n'))
             .digest('hex');
-    sources.set(source.id, {
+    return {
       id: source.id,
       title: source.title,
       producer: source.producer,
@@ -69,7 +88,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
       sha256,
       bytes: results.reduce((sum, r) => sum + r.bytes, 0),
       files: results.length,
-    });
+    };
   }
 
   const fetchOne = (source: SourceDefinition, url: string, extension: string) =>
@@ -82,13 +101,22 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
     });
 
   const io: StepIO = {
-    async json(source) {
-      const result = await fetchOne(source, source.url, 'json');
+    async json(source, url = source.url) {
+      const result = await fetchOne(source, url, 'json');
       record(source, [result]);
       try {
         return JSON.parse(await readFile(result.path, 'utf8')) as unknown;
       } catch (error) {
-        throw new Error(`Source « ${source.id} » : JSON invalide (${source.url})`, {
+        throw new Error(`Source « ${source.id} » : JSON invalide (${url})`, { cause: error });
+      }
+    },
+    async gzipJson(source) {
+      const result = await fetchOne(source, source.url, 'json.gz');
+      record(source, [result]);
+      try {
+        return JSON.parse(gunzipSync(await readFile(result.path)).toString('utf8')) as unknown;
+      } catch (error) {
+        throw new Error(`Source « ${source.id} » : archive gzip ou JSON invalide`, {
           cause: error,
         });
       }
@@ -128,7 +156,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
   const manifest: DataManifest = {
     dataVersion: options.dataVersion,
     generatedAt: new Date().toISOString(),
-    sources: [...sources.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    sources: [...downloads.values()].map(summarize).sort((a, b) => a.id.localeCompare(b.id)),
     outputs: outputs.sort((a, b) => a.file.localeCompare(b.file)),
   };
   await writeFile(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
