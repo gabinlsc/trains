@@ -54,3 +54,11 @@ test('les attributions des données sont affichées en permanence', async ({ pag
   await expect(attrib).toContainText('INSEE');
   await expect(attrib).toContainText('Parcs nationaux de France');
 });
+
+test('le relief absent de la génération est signalé sans erreur', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.getByLabel('Relief ombré').check();
+  await expect(page.getByText('données indisponibles')).toBeVisible();
+  expect(errors).toEqual([]);
+});

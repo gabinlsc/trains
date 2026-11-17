@@ -36,6 +36,11 @@ export interface DownloadOptions {
   sourceId: string;
   /** Empreinte attendue, pour les fichiers amont immuables. */
   sha256?: string;
+  /**
+   * Codes HTTP à retenter en plus des erreurs passagères habituelles, pour
+   * un serveur qui renvoie à tort des 4xx sous charge.
+   */
+  retryStatuses?: readonly number[];
   retries?: number;
   timeoutMs?: number;
   fetchImpl?: FetchLike;
@@ -162,7 +167,9 @@ async function attemptDownload(
   }
   if (!response.ok) {
     const error = new SourceUnavailableError(options.sourceId, url, `HTTP ${response.status}`);
-    if (isRetryableStatus(response.status)) return { retry: error };
+    if (isRetryableStatus(response.status) || options.retryStatuses?.includes(response.status)) {
+      return { retry: error };
+    }
     throw error;
   }
   if (!response.body) return { retry: new Error('réponse sans contenu') };

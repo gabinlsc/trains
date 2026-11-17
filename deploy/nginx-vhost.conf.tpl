@@ -78,6 +78,7 @@ server {
             application/json json;
             application/geo+json geojson;
             application/octet-stream bin;
+            image/png png;
         }
         gzip_types application/json application/geo+json application/octet-stream;
         add_header Cache-Control "no-cache" always;
@@ -90,6 +91,7 @@ server {
             application/json json;
             application/geo+json geojson;
             application/octet-stream bin;
+            image/png png;
         }
         gzip_types application/json application/geo+json application/octet-stream;
         add_header Cache-Control "public, max-age=31536000, immutable" always;

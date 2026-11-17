@@ -63,6 +63,8 @@ export const fr = {
     stations: 'Gares voyageurs',
     communes: 'Communes de 2 000 habitants ou plus',
     urban: 'Tache urbaine',
+    hillshade: 'Relief ombré',
+    contours: 'Courbes de niveau',
     rivers: 'Fleuves et grandes rivières',
     parks: 'Parcs nationaux (cœur et aire d’adhésion)',
     departments: 'Limites des départements',

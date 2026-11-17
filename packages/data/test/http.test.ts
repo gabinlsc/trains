@@ -87,6 +87,18 @@ describe('download', () => {
     expect(fetchImpl.calls).toBe(1);
   });
 
+  it('retente les codes déclarés par la source', async () => {
+    const fetchImpl = scripted([new Response('surcharge', { status: 400 }), new Response(BODY)]);
+    const result = await download(URL, join(dir, 'x.json'), {
+      sourceId: 'cours-eau',
+      fetchImpl,
+      backoffMs: noWait,
+      retryStatuses: [400],
+    });
+    expect(result.sha256).toBe(SHA);
+    expect(fetchImpl.calls).toBe(2);
+  });
+
   it('échoue clairement après épuisement des tentatives', async () => {
     const fetchImpl = scripted([new TypeError('fetch failed')]);
     const error = await download(URL, join(dir, 'x.json'), {
