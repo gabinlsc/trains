@@ -15,6 +15,9 @@
   import { onDestroy, onMount } from 'svelte';
   import { t } from '../i18n/index.ts';
   import { theme } from '../lib/theme.svelte.ts';
+  import { DATA_ATTRIBUTIONS } from './layers/catalog.ts';
+  import LayersPanel from './layers/LayersPanel.svelte';
+  import { OverlayManager } from './layers/overlays.svelte.ts';
   import { BASEMAP_ATTRIBUTION, BASEMAP_SOURCE, buildStyle } from './style.ts';
   import { FRANCE_BOUNDS, MAX_BOUNDS, MAX_ZOOM, MIN_ZOOM } from './view.ts';
 
@@ -23,6 +26,7 @@
   let basemapError = $state(false);
   let webglError = $state(false);
   let appliedTheme = theme.effective;
+  const overlays = new OverlayManager();
 
   // Le worker est émis par Vite comme fichier à part (même origine, compatible
   // avec la CSP « worker-src 'self' ») ; MapLibre ne le trouve pas seul une
@@ -62,9 +66,14 @@
     map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
     // Attributions toujours visibles : licences ODbL et Licence Ouverte.
     map.addControl(
-      new AttributionControl({ compact: false, customAttribution: BASEMAP_ATTRIBUTION }),
+      new AttributionControl({
+        compact: false,
+        customAttribution: [BASEMAP_ATTRIBUTION, ...DATA_ATTRIBUTIONS],
+      }),
       'bottom-right',
     );
+
+    overlays.attach(map, appliedTheme);
 
     map.on('error', (event: MapErrorEvent & { sourceId?: string }) => {
       const sourceId = (event as { sourceId?: string }).sourceId;
@@ -82,6 +91,7 @@
     const next = theme.effective;
     if (!map || next === appliedTheme) return;
     appliedTheme = next;
+    overlays.setTheme(next);
     map.setStyle(buildStyle(next, location.origin));
   });
 
@@ -93,6 +103,9 @@
 
 <div class="map-wrap">
   <div class="map" bind:this={container} role="region" aria-label={t('map.label')}></div>
+  {#if !webglError}
+    <LayersPanel manager={overlays} />
+  {/if}
   {#if basemapError}
     <p class="banner" role="status">{t('map.basemapUnavailable')}</p>
   {/if}
@@ -133,5 +146,34 @@
 
   .banner.error {
     border-left-color: var(--signal);
+  }
+
+  /* Contrôles MapLibre accordés au thème de l'application. */
+  .map-wrap :global(.maplibregl-ctrl-group) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .map-wrap :global(.maplibregl-ctrl-group button + button) {
+    border-top-color: var(--border);
+  }
+
+  :global(:root[data-theme='dark']) .map-wrap :global(.maplibregl-ctrl-icon) {
+    filter: invert(1);
+  }
+
+  .map-wrap :global(.maplibregl-ctrl-attrib) {
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    color: var(--text-muted);
+  }
+
+  .map-wrap :global(.maplibregl-ctrl-attrib a) {
+    color: var(--text);
+  }
+
+  .map-wrap :global(.maplibregl-ctrl-scale) {
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    border-color: var(--text-muted);
+    color: var(--text);
   }
 </style>

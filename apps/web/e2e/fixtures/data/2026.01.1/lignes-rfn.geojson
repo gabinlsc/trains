@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "code": "420000", "status": "open", "statut": "Exploitée" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3553, 48.8805],
+          [3.0571, 50.6364]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "code": "830000", "status": "closed", "statut": "Fermée" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3553, 48.8805],
+          [4.8597, 45.7605]
+        ]
+      }
+    }
+  ]
+}

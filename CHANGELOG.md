@@ -30,6 +30,11 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Carte MapLibre (`/carte`) sur le fond PMTiles auto-hébergé, style sur
   mesure en thèmes clair et sombre, libellés en français, attributions
   permanentes, message explicite si le fond de carte ou WebGL manque.
+- Calques activables : réseau ferré actuel (fantôme), lignes fermées ou
+  neutralisées, gares voyageurs, communes de 2 000 habitants ou plus (taille
+  proportionnelle), tache urbaine, cours d'eau, parcs nationaux, limites
+  des départements et des régions ; panneau accessible au clavier avec
+  légende, choix mémorisés, attributions de toutes les sources.
 - Routage côté client, page 404, bascule de thème mémorisée.
 - Tests de bout en bout Playwright (job CI `e2e`).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
