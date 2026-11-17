@@ -47,6 +47,8 @@ export default defineConfig({
   },
   preview: {
     port: 4173,
+    // Même relais qu'en développement : la prévisualisation sert aussi aux tests.
+    proxy: { '/api': 'http://127.0.0.1:3070' },
   },
   test: {
     include: ['src/**/*.test.ts'],
