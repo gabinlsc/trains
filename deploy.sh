@@ -312,8 +312,8 @@ setup_user() {
   install -d -m 0755 -o "$APP_USER" -g "$APP_USER" "$APP_DIR" "$APP_DIR/releases"
   install -d -m 0750 -o "$APP_USER" -g "$APP_USER" "$DATA_DIR" "$DATA_DIR/data" \
     "$DATA_DIR/tiles" "$DATA_DIR/backups"
-  # Nginx (www-data) doit pouvoir lire les tuiles.
-  chmod 0755 "$DATA_DIR" "$DATA_DIR/tiles"
+  # Nginx (www-data) doit pouvoir lire les tuiles et les données publiées.
+  chmod 0755 "$DATA_DIR" "$DATA_DIR/tiles" "$DATA_DIR/data"
   install -d -m 0750 -o "$APP_USER" -g "$APP_USER" "$LOG_DIR"
   install -d -m 0750 -o root -g "$APP_USER" "$(dirname "$ENV_FILE")"
   ok "Arborescence prête"
@@ -462,23 +462,12 @@ prune_releases() {
 # ---------------------------------------------------------------------------
 # 6. Données
 # ---------------------------------------------------------------------------
-download_verified() {
-  local url=$1 sha=$2 dest=$3
-  if [[ -f "$dest" ]] && echo "${sha}  ${dest}" | sha256sum -c --status; then
-    ok "$(basename "$dest") déjà à jour"
-    return 0
-  fi
-  info "Téléchargement de $(basename "$dest")"
-  # -C - reprend un téléchargement interrompu (fichier .part conservé).
-  as_app curl -fL --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 20 \
-    -C - -o "${dest}.part" "$url"
-  echo "${sha}  ${dest}.part" | sha256sum -c --status ||
-    {
-      rm -f "${dest}.part"
-      die "Somme de contrôle invalide pour ${url}."
-    }
-  mv -f "${dest}.part" "$dest"
-  ok "$(basename "$dest") vérifié"
+run_data_command() {
+  local script=$1
+  (
+    cd "$RELEASE_DIR" &&
+      as_app env DATA_DIR="$DATA_DIR" corepack pnpm --silent --filter @trains/data run "$script"
+  )
 }
 
 prepare_data() {
@@ -487,27 +476,33 @@ prepare_data() {
     warn "Données ignorées (--skip-data) : le service fonctionnera en mode dégradé."
     return 0
   fi
-
-  local basemap_conf="$RELEASE_DIR/deploy/basemap.conf"
-  if [[ -f "$basemap_conf" ]]; then
-    local PMTILES_URL="" PMTILES_SHA256="" PMTILES_FILE=""
-    # shellcheck source=/dev/null
-    source "$basemap_conf"
-    download_verified "$PMTILES_URL" "$PMTILES_SHA256" "$DATA_DIR/tiles/${PMTILES_FILE}"
-  else
-    info "Aucun fond de carte déclaré dans cette version."
-  fi
-
-  local pipeline="$RELEASE_DIR/packages/data/package.json"
-  if [[ -f "$pipeline" ]]; then
-    (
-      cd "$RELEASE_DIR"
-      as_app env DATA_DIR="$DATA_DIR" corepack pnpm --filter @trains/data run pipeline
-    )
-    ok "Données à jour"
-  else
+  if [[ ! -f "$RELEASE_DIR/packages/data/package.json" ]]; then
     info "Pas de pipeline de données dans cette version."
+    return 0
   fi
+
+  # Une source ouverte indisponible ne doit pas bloquer la mise en production :
+  # les données précédentes restent en service, ou l'API passe en mode dégradé.
+  local failures=0
+  if run_data_command pipeline; then
+    ok "Données ouvertes à jour"
+  else
+    warn "Pipeline de données en échec (voir ci-dessus) : génération précédente conservée."
+    failures=$((failures + 1))
+  fi
+
+  local free_gb
+  free_gb="$(df -BG --output=avail "$DATA_DIR" | tail -1 | tr -dc '0-9')"
+  if ((free_gb < MIN_FREE_GB)); then
+    warn "Moins de ${MIN_FREE_GB} Go libres : une extraction du fond de carte (≈ 3 Go) pourrait échouer."
+  fi
+  if run_data_command basemap; then
+    ok "Fond de carte à jour"
+  else
+    warn "Fond de carte non mis à jour (voir ci-dessus) : l'extrait précédent reste servi s'il existe."
+    failures=$((failures + 1))
+  fi
+  ((failures == 0)) || warn "Relancer plus tard : sudo bash ${APP_DIR}/current/deploy.sh"
 }
 
 # ---------------------------------------------------------------------------

@@ -250,3 +250,28 @@ lourd pour un chargement complet par le navigateur. La stratégie côté client
 profil en long. `erasableSyntaxOnly` est activé dans TypeScript pour que le
 moteur reste exécutable tel quel par Node et les outils qui ne font
 qu'effacer les types.
+
+## ADR-016 — Extraction du fond de carte écrite en TypeScript
+
+**Contexte.** Le fond de carte doit être auto-hébergé : un extrait France de
+l'archive Protomaps mondiale (140 Go), limité au zoom 13. L'outil de
+référence (`pmtiles extract`, en Go) devrait être téléchargé sur le serveur
+de production, partagé avec d'autres sites, et ne pouvait pas être éprouvé
+dans notre chaîne d'intégration.
+
+**Décision.** Extraction implémentée dans `packages/data/src/basemap/` :
+lecture des répertoires par requêtes Range (feuilles comprises), sélection
+des tuiles de l'emprise, regroupement des plages proches (moins de 512 Kio
+d'écart), et écriture d'une archive PMTiles v3 en une seule passe (tuiles
+puis métadonnées et feuilles, en-tête réécrit en tête). La bibliothèque
+`pmtiles` sert à la lecture et à la vérification dans les tests. Le dernier
+build au schéma v4 est choisi automatiquement ; l'état de l'extrait est
+consigné dans `tiles/france.json`.
+
+**Conséquences.** Aucun binaire tiers en production ; extraction testée sur
+des archives synthétiques et vérifiée contre l'archive réelle (tuiles
+identiques octet pour octet). Une extraction interrompue repart de zéro
+(quelques minutes) au lieu de reprendre : chaque requête Range est retentée,
+ce qui suffit en pratique. Les glyphes et sprites ne peuvent pas être
+épinglés sur un commit (pas d'étiquette publiée) : leur empreinte est
+consignée et revérifiée à chaque passage.

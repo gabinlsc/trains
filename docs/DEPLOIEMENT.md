@@ -86,8 +86,11 @@ commande : le déploiement reprend.
 --frozen-lockfile` et `pnpm build` y sont lancés. Si le commit est déjà en
    service, cette étape est sautée. En cas d'échec, la release incomplète est
    supprimée et le service n'est pas touché.
-6. **Données** : fond de carte PMTiles (téléchargement reprenable, vérifié
-   par SHA-256) et pipeline de données, si la release les déclare.
+6. **Données** : pipeline de données ouvertes (régénéré seulement si
+   `DATA_VERSION` change) puis fond de carte (extrait France de Protomaps,
+   refait au-delà de 90 jours). Un échec ici n'interrompt pas le
+   déploiement : la génération précédente reste en service, ou l'API passe
+   en mode dégradé, et le script le signale.
 7. **Secrets** : `/etc/trains/trains.env` (mode 600, `root:trains`) est créé
    au premier lancement avec un `SESSION_SECRET` aléatoire. Il n'est jamais
    écrasé ; seules les clés manquantes sont ajoutées.

@@ -97,6 +97,22 @@ in_box 'curl -fsS -H "Host: trains.glsc.fr" http://127.0.0.1/une/route/spa' | gr
 in_box 'nginx -t 2>/dev/null' || fail "configuration Nginx invalide"
 deploy --status >/dev/null || fail "--status en échec"
 
+echo "▶ Données publiées"
+# Génération factice : vérifie la chaîne complète (droits, Nginx, santé).
+in_box 'install -d -o trains -g trains /var/lib/trains/data/2026.01.1 &&
+  echo "{\"dataVersion\":\"2026.01.1\",\"generatedAt\":\"2026-01-01T00:00:00.000Z\",\"sources\":[],\"outputs\":[]}" \
+    >/var/lib/trains/data/2026.01.1/manifest.json &&
+  ln -sfn 2026.01.1 /var/lib/trains/data/current && touch /var/lib/trains/data/.lock'
+data_headers="$(in_box 'curl -fsSI -H "Host: trains.glsc.fr" http://127.0.0.1/data/current/manifest.json')"
+grep -qi '^cache-control: no-cache' <<<"$data_headers" || fail "manifeste courant mis en cache"
+grep -qi '^content-type: application/json' <<<"$data_headers" || fail "type MIME du manifeste"
+in_box 'curl -fsSI -H "Host: trains.glsc.fr" http://127.0.0.1/data/2026.01.1/manifest.json' |
+  grep -qi 'immutable' || fail "données versionnées sans cache permanent"
+[[ "$(in_box 'curl -s -o /dev/null -w "%{http_code}" -H "Host: trains.glsc.fr" http://127.0.0.1/data/.lock')" == 404 ]] ||
+  fail "fichier caché servi"
+in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"data":{"status":"ok","version":"2026.01.1"}' ||
+  fail "la santé ne voit pas les données publiées"
+
 echo "▶ Mise à jour vers un nouveau commit"
 git clone --quiet --branch "$BRANCH" "$WORK/repo.git" "$WORK/clone"
 git -C "$WORK/clone" -c user.name=test -c user.email=test@example.invalid \
@@ -126,7 +142,7 @@ echo "▶ Rollback"
 deploy --rollback
 [[ "$(in_box 'readlink -f /opt/trains/current')" == "$(echo "$first" | tail -1)" ]] ||
   fail "le rollback n'est pas revenu à la première release"
-in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"status":"degraded"' ||
+in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"database":{"status":"ok"' ||
   fail "service KO après rollback"
 
 echo "✔ deploy.sh validé : installation, idempotence, mise à jour et rollback."
