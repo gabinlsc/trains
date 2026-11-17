@@ -362,3 +362,23 @@ nœud (passage ou bifurcation) est déduite du nombre de tronçons.
 modification copie les dictionnaires de premier niveau (quelques
 millisecondes pour 10 000 tronçons). Les identifiants aléatoires préfixés
 (`n_…`, `s_…`) restent courts dans les sauvegardes.
+
+## ADR-021 — Tracé saisi par points, lissé au rayon de la vitesse de conception
+
+**Contexte.** Le joueur trace des voies point par point ; une voie ferrée
+réelle raccorde ses alignements par des courbes dont le rayon dépend de la
+vitesse (environ 7 000 m à 320 km/h). Le tracé doit rester modifiable.
+
+**Décision.** Les points saisis sont la donnée de référence, stockée dans
+`via`. Le tracé affiché et utilisé par le moteur est recalculé : chaque angle
+devient un arc tangent au rayon minimal de la vitesse de conception
+(`smoothAlignment`). Si un alignement est trop court pour loger l'arc, le
+rayon est réduit localement et le sommet est signalé. Un angle vif se
+détecte à la déviation en un sommet (plus de 3°), pas au rayon du cercle
+passant par trois points, qui le masquerait entre de longs alignements.
+L'aimantation privilégie les nœuds du réseau puis les gares réelles ; une
+extrémité aimantée à une gare réelle crée une gare liée à son code UIC.
+
+**Conséquences.** Changer la vitesse d'un tronçon redessine ses courbes sans
+toucher aux points saisis. Les clothoïdes de raccordement ne sont pas
+modélisées : à l'échelle du jeu, l'arc circulaire suffit.

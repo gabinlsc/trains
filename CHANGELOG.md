@@ -13,6 +13,13 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   opérations d'édition immuables (ajout, déplacement, scission, fusion,
   suppression en cascade, copier-coller) et historique d'annulation
   illimité.
+- Éditeur sur la carte : tracé de voies point par point avec aperçu,
+  aimantation sur le réseau et les gares réelles, courbes raccordées au
+  rayon minimal de la vitesse de conception, rayons insuffisants signalés,
+  sélection, déplacement des nœuds, suppression, annulation ; barre d'outils
+  et raccourcis clavier.
+- Moteur : rayon minimal selon la vitesse, raccordement par arcs, détection
+  des angles vifs, classes de déclivité et rampe maximale.
 
 ## [0.2.0] — 2026-11-17
 
