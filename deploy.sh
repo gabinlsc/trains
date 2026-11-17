@@ -670,6 +670,17 @@ security_headers() {
 # Les directives IPv6 feraient échouer « nginx -t » sur un noyau sans IPv6.
 ipv6_available() { [[ -s /proc/net/if_inet6 ]]; }
 
+# Version de Nginx installée (« 1.24.0 »).
+nginx_version() { nginx -v 2>&1 | sed -n 's|.*nginx/\([0-9.]*\).*|\1|p'; }
+
+# Vrai si la version installée est au moins celle demandée.
+nginx_at_least() {
+  local current
+  current="$(nginx_version)"
+  [[ -n "$current" ]] || return 1
+  [[ "$(printf '%s\n%s\n' "$1" "$current" | sort -V | head -n1)" == "$1" ]]
+}
+
 listen_lines() {
   local port_spec=$1
   printf '    listen %s;' "$port_spec"
@@ -680,7 +691,13 @@ render_vhost() {
   local tls=0 listen redirect='' tls_block='' brotli='' limit_req=''
   has_valid_cert && tls=1
   if ((tls == 1)); then
-    listen="$(listen_lines '443 ssl')"$'\n    http2 on;'
+    # « http2 on » n'existe qu'à partir de Nginx 1.25.1 ; avant (1.24 sur
+    # Ubuntu 24.04), HTTP/2 s'active sur la directive listen.
+    if nginx_at_least 1.25.1; then
+      listen="$(listen_lines '443 ssl')"$'\n    http2 on;'
+    else
+      listen="$(listen_lines '443 ssl http2')"
+    fi
     tls_block="    ssl_certificate $(cert_path);
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;"
     if [[ -f /etc/letsencrypt/options-ssl-nginx.conf ]]; then

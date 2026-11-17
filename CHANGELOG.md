@@ -7,6 +7,12 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Corrigé
+
+- Déploiement : le vhost HTTPS échouait à « nginx -t » avec Nginx 1.24
+  (Ubuntu 24.04), qui ne connaît pas la directive `http2 on` ; HTTP/2
+  s'active désormais selon la version installée.
+
 ## [0.3.0] — 2026-11-17
 
 Éditeur d'infrastructure : tracé, profil en long, gares et bifurcations,

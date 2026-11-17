@@ -118,6 +118,20 @@ in_box 'curl -fsSI -H "Host: trains.glsc.fr" http://127.0.0.1/data/2026.01.1/man
 in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"data":{"status":"ok","version":"2026.01.1"}' ||
   fail "la santé ne voit pas les données publiées"
 
+echo "▶ Vhost HTTPS une fois le certificat présent"
+# Certificat autosigné à l'emplacement de Let's Encrypt : le rendu HTTPS doit
+# passer « nginx -t » avec la version de Nginx d'Ubuntu 24.04.
+in_box 'install -d /etc/letsencrypt/live/trains.glsc.fr &&
+  openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj /CN=trains.glsc.fr \
+    -keyout /etc/letsencrypt/live/trains.glsc.fr/privkey.pem \
+    -out /etc/letsencrypt/live/trains.glsc.fr/fullchain.pem 2>/dev/null'
+deploy
+in_box 'grep -q "listen 443 ssl" /etc/nginx/sites-available/trains.glsc.fr' || fail "vhost HTTPS absent"
+in_box 'curl -fsSk --resolve trains.glsc.fr:443:127.0.0.1 https://trains.glsc.fr/api/health' |
+  grep -q '"status"' || fail "HTTPS ne répond pas"
+[[ "$(in_box 'curl -s -o /dev/null -w "%{http_code}" -H "Host: trains.glsc.fr" http://127.0.0.1/')" == 301 ]] ||
+  fail "HTTP ne redirige pas vers HTTPS"
+
 echo "▶ Mise à jour vers un nouveau commit"
 git clone --quiet --branch "$BRANCH" "$WORK/repo.git" "$WORK/clone"
 git -C "$WORK/clone" -c user.name=test -c user.email=test@example.invalid \
