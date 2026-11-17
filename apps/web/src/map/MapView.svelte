@@ -1,0 +1,137 @@
+<script lang="ts">
+  import 'maplibre-gl/dist/maplibre-gl.css';
+  import {
+    addProtocol,
+    AttributionControl,
+    Map as MapLibreMap,
+    NavigationControl,
+    ScaleControl,
+    setWorkerUrl,
+    type ErrorEvent as MapErrorEvent,
+    type MapSourceDataEvent,
+  } from 'maplibre-gl';
+  import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+  import { Protocol } from 'pmtiles';
+  import { onDestroy, onMount } from 'svelte';
+  import { t } from '../i18n/index.ts';
+  import { theme } from '../lib/theme.svelte.ts';
+  import { BASEMAP_ATTRIBUTION, BASEMAP_SOURCE, buildStyle } from './style.ts';
+  import { FRANCE_BOUNDS, MAX_BOUNDS, MAX_ZOOM, MIN_ZOOM } from './view.ts';
+
+  let container: HTMLDivElement;
+  let map: MapLibreMap | null = null;
+  let basemapError = $state(false);
+  let webglError = $state(false);
+  let appliedTheme = theme.effective;
+
+  // Le worker est émis par Vite comme fichier à part (même origine, compatible
+  // avec la CSP « worker-src 'self' ») ; MapLibre ne le trouve pas seul une
+  // fois le module regroupé.
+  setWorkerUrl(workerUrl);
+
+  // Le protocole est global à MapLibre : on ne l'enregistre qu'une fois.
+  const globalKey = '__rdfPmtilesProtocol';
+  const registry = globalThis as unknown as Record<string, Protocol | undefined>;
+  if (!registry[globalKey]) {
+    const protocol = new Protocol();
+    addProtocol('pmtiles', protocol.tile);
+    registry[globalKey] = protocol;
+  }
+
+  onMount(() => {
+    try {
+      map = new MapLibreMap({
+        container,
+        style: buildStyle(appliedTheme, location.origin),
+        bounds: FRANCE_BOUNDS,
+        maxBounds: MAX_BOUNDS,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+        attributionControl: false,
+        dragRotate: false,
+        pitchWithRotate: false,
+        // Respecte prefers-reduced-motion.
+        fadeDuration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300,
+      });
+    } catch {
+      webglError = true;
+      return;
+    }
+    map.touchZoomRotate.disableRotation();
+    map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
+    // Attributions toujours visibles : licences ODbL et Licence Ouverte.
+    map.addControl(
+      new AttributionControl({ compact: false, customAttribution: BASEMAP_ATTRIBUTION }),
+      'bottom-right',
+    );
+
+    map.on('error', (event: MapErrorEvent & { sourceId?: string }) => {
+      const sourceId = (event as { sourceId?: string }).sourceId;
+      if (sourceId === BASEMAP_SOURCE || /pmtiles|france\.pmtiles/.test(event.error.message)) {
+        basemapError = true;
+      }
+    });
+    map.on('sourcedata', (event: MapSourceDataEvent) => {
+      if (event.sourceId === BASEMAP_SOURCE && event.isSourceLoaded) basemapError = false;
+    });
+  });
+
+  // Changement de thème : nouveau style, la caméra est conservée.
+  $effect(() => {
+    const next = theme.effective;
+    if (!map || next === appliedTheme) return;
+    appliedTheme = next;
+    map.setStyle(buildStyle(next, location.origin));
+  });
+
+  onDestroy(() => {
+    map?.remove();
+    map = null;
+  });
+</script>
+
+<div class="map-wrap">
+  <div class="map" bind:this={container} role="region" aria-label={t('map.label')}></div>
+  {#if basemapError}
+    <p class="banner" role="status">{t('map.basemapUnavailable')}</p>
+  {/if}
+  {#if webglError}
+    <p class="banner error" role="alert">{t('map.webglUnavailable')}</p>
+  {/if}
+</div>
+
+<style>
+  .map-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .map {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+  }
+
+  .banner {
+    position: absolute;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(36rem, calc(100% - 2 * var(--space-4)));
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--line-c);
+    border-radius: var(--radius-m);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9375rem;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.12);
+  }
+
+  .banner.error {
+    border-left-color: var(--signal);
+  }
+</style>
