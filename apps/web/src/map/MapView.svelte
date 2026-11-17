@@ -15,6 +15,11 @@
   import { onDestroy, onMount } from 'svelte';
   import { t } from '../i18n/index.ts';
   import { theme } from '../lib/theme.svelte.ts';
+  import { EditorController } from '../editor/controller.ts';
+  import type { SnapTarget } from '../editor/snap.ts';
+  import { EditorStore } from '../editor/store.svelte.ts';
+  import Toolbar from '../editor/Toolbar.svelte';
+  import { loadDataFile, type Table } from './layers/data.ts';
   import { DATA_ATTRIBUTIONS } from './layers/catalog.ts';
   import LayersPanel from './layers/LayersPanel.svelte';
   import { OverlayManager } from './layers/overlays.svelte.ts';
@@ -27,6 +32,66 @@
   let webglError = $state(false);
   let appliedTheme = theme.effective;
   const overlays = new OverlayManager();
+  const editor = new EditorStore();
+  let controller: EditorController | null = null;
+  let stationsRequested = false;
+
+  /** Gares réelles proposées à l'aimantation, chargées au premier tracé. */
+  async function loadSnapStations(): Promise<void> {
+    if (stationsRequested || !controller) return;
+    stationsRequested = true;
+    try {
+      const table = await loadDataFile<Table>('gares.json');
+      const f = Object.fromEntries(table.fields.map((name, i) => [name, i]));
+      controller.stations = table.rows.map((row): SnapTarget => ({
+        kind: 'station',
+        uic: String(row[f.uic as number]),
+        label: String(row[f.nom as number]),
+        position: [row[f.lng as number] as number, row[f.lat as number] as number],
+      }));
+    } catch {
+      // Sans données de gares, l'aimantation se limite au réseau du joueur.
+      stationsRequested = false;
+    }
+  }
+
+  /** Raccourcis clavier de l'éditeur ; inactifs pendant la saisie dans un champ. */
+  function onKeydown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    // Seuls les champs de saisie bloquent les raccourcis ; une case à cocher
+    // (panneau des calques) garde le focus sans rien saisir.
+    const typing =
+      'textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="button"])';
+    if (target?.closest(typing)) return;
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) editor.redo();
+      else editor.undo();
+    } else if (mod && key === 'y') {
+      event.preventDefault();
+      editor.redo();
+    } else if (mod) {
+      return;
+    } else if (key === 'v') {
+      controller?.cancel();
+      editor.setTool('select');
+    } else if (key === 't') {
+      editor.setTool('draw');
+    } else if (key === 'enter' && controller?.drafting) {
+      controller.finish();
+    } else if (key === 'escape') {
+      if (controller?.drafting) controller.cancel();
+      else editor.clearSelection();
+    } else if (key === 'backspace' && controller?.drafting) {
+      event.preventDefault();
+      controller.undoPoint();
+    } else if ((key === 'delete' || key === 'backspace') && editor.selection.size > 0) {
+      event.preventDefault();
+      editor.deleteSelection();
+    }
+  }
 
   // Le worker est émis par Vite comme fichier à part (même origine, compatible
   // avec la CSP « worker-src 'self' ») ; MapLibre ne le trouve pas seul une
@@ -74,6 +139,7 @@
     );
 
     overlays.attach(map, appliedTheme);
+    controller = new EditorController(map, editor, appliedTheme);
 
     map.on('error', (event: MapErrorEvent & { sourceId?: string }) => {
       const sourceId = (event as { sourceId?: string }).sourceId;
@@ -92,7 +158,18 @@
     if (!map || next === appliedTheme) return;
     appliedTheme = next;
     overlays.setTheme(next);
+    controller?.setTheme(next);
     map.setStyle(buildStyle(next, location.origin));
+  });
+
+  // Toute modification du réseau ou de la sélection redessine la carte.
+  $effect(() => {
+    controller?.render(editor.network, [...editor.selection]);
+  });
+
+  $effect(() => {
+    if (editor.tool === 'draw') void loadSnapStations();
+    else controller?.cancel();
   });
 
   onDestroy(() => {
@@ -101,10 +178,13 @@
   });
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <div class="map-wrap">
   <div class="map" bind:this={container} role="region" aria-label={t('map.label')}></div>
   {#if !webglError}
     <LayersPanel manager={overlays} />
+    <Toolbar store={editor} />
   {/if}
   {#if basemapError}
     <p class="banner" role="status">{t('map.basemapUnavailable')}</p>
