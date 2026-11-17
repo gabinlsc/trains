@@ -27,7 +27,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     bodyLimit: BODY_LIMIT_BYTES,
     // Nginx est le seul client direct : on lui fait confiance pour X-Forwarded-*.
     trustProxy: '127.0.0.1',
-    disableRequestLogging: options.config.NODE_ENV === 'test',
   });
 
   app.decorate('config', options.config);
