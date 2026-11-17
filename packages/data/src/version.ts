@@ -5,4 +5,4 @@
  *
  * Format : AAAA.MM.N (année et mois de la révision, puis compteur).
  */
-export const DATA_VERSION = '2026.11.1';
+export const DATA_VERSION = '2026.11.2';

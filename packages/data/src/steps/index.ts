@@ -14,6 +14,7 @@ import { FOREIGN_CITIES } from './foreign-cities.ts';
 import { buildGares } from './gares.ts';
 import { buildRivers, HydroPageSchema, hydrographyPageUrl, WFS_PAGE_SIZE } from './hydrography.ts';
 import { buildProtectedAreas } from './protected-areas.ts';
+import { reliefFiles } from './relief.ts';
 import { buildRailLines } from './rail-lines.ts';
 
 const json = (value: unknown): string => JSON.stringify(value);
@@ -111,6 +112,10 @@ export const elevationStep: Step = {
     );
     const grid = buildElevationGrid(store);
     await io.write('altitude.bin', grid, GRID_SPEC.cols * GRID_SPEC.rows);
+    // Mêmes tuiles source : ombrage et courbes de niveau côté navigateur.
+    const relief = reliefFiles(store);
+    io.log(`  ${relief.length} tuiles de relief`);
+    await io.writeTree('relief', relief);
   },
 };
 
