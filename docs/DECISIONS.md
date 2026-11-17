@@ -299,3 +299,25 @@ large ; la marge montre le fond uni, lu comme « hors zone ».
 une fois puis mise en cache (fichiers fingerprintés). Nginx doit servir
 `.mjs` comme JavaScript (types déclarés dans `/assets/`, contrôlé par le test
 de déploiement).
+
+## ADR-018 — Calques de données chargés à la demande
+
+**Contexte.** La carte doit proposer une dizaine de calques activables (réseau
+réel, lignes fermées, gares, communes, limites, cours d'eau, parcs, tache
+urbaine), pour plusieurs mégaoctets de données au total, sans pénaliser
+l'ouverture de la carte ni le changement de thème.
+
+**Décision.** Un catalogue déclaratif (`map/layers/catalog.ts`) décrit chaque
+calque : couches MapLibre par thème, donnée source, légende. Seuls les
+calques actifs téléchargent leur fichier, sous `/data/<version>/` (cache
+permanent), la version venant du manifeste courant. Deux calques lisant le
+même fichier partagent la source. Après un changement de style (thème),
+sources et couches sont réinstallées à partir du cache, sans
+retéléchargement. Les choix sont mémorisés localement. Les communes
+remplacent les libellés de localités du fond de carte pour éviter les
+doublons ; la tache urbaine réutilise les zones urbaines du fond.
+
+**Conséquences.** Par défaut, seuls le réseau réel (2,4 Mo, 0,7 Mo
+compressé) et les communes sont chargés. Un fichier manquant n'affecte que
+son calque, signalé dans le panneau. La légende associe à chaque couleur un
+libellé et, pour les limites et lignes fermées, un motif pointillé.
