@@ -70,6 +70,21 @@ export const fr = {
     departments: 'Limites des départements',
     regions: 'Limites des régions',
   },
+  editor: {
+    toolbar: 'Outils d’édition',
+    select: 'Sélectionner (V)',
+    draw: 'Tracer une voie (T)',
+    undo: 'Annuler (Ctrl+Z)',
+    redo: 'Rétablir (Ctrl+Maj+Z)',
+    undoNamed: 'Annuler : {label}',
+    redoNamed: 'Rétablir : {label}',
+    delete: 'Supprimer la sélection (Suppr)',
+    drawHint:
+      'Cliquez pour poser des points, Entrée ou double-clic pour terminer, Échap pour annuler.',
+    speed: 'Vitesse de conception',
+    radius: 'Rayon minimal : {radius} m',
+    issues: '{count} courbe(s) trop serrée(s) pour cette vitesse',
+  },
   notFound: {
     title: 'Page introuvable',
     text: 'Cette adresse ne correspond à aucune page.',
