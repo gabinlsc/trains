@@ -27,6 +27,11 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   auto-hébergés, rafraîchissement tous les 90 jours (commande `basemap`).
 - Nginx sert les données publiées sous `/data/` (cache immuable par version)
   et le fond de carte sous `/tiles/`.
+- Carte MapLibre (`/carte`) sur le fond PMTiles auto-hébergé, style sur
+  mesure en thèmes clair et sombre, libellés en français, attributions
+  permanentes, message explicite si le fond de carte ou WebGL manque.
+- Routage côté client, page 404, bascule de thème mémorisée.
+- Tests de bout en bout Playwright (job CI `e2e`).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
 
 ### Modifié
