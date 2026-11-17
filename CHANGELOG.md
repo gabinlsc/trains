@@ -7,6 +7,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [0.2.0] — 2026-11-17
+
+Phase 1 — Carte : données ouvertes, fond de carte auto-hébergé et calques.
+
 ### Ajouté
 
 - `packages/data` : pipeline de données ouvertes versionné (`DATA_VERSION`),
@@ -84,5 +88,6 @@ Phase 0 — Fondations : le projet est outillé, testé et déployable.
 
 - Le hook `pre-commit` n'échoue plus quand aucun fichier n'est indexé.
 
-[Non publié]: https://github.com/gabinlsc/trains/compare/v0.1.0...HEAD
+[Non publié]: https://github.com/gabinlsc/trains/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/gabinlsc/trains/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gabinlsc/trains/releases/tag/v0.1.0
