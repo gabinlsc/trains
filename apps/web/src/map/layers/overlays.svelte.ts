@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson';
-import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
+import type { GeoJSONSource, Map as MapLibreMap, SourceSpecification } from 'maplibre-gl';
 import { SvelteSet } from 'svelte/reactivity';
 import type { Theme } from '../style.ts';
 import { dataKeyOf, OVERLAYS, sourceId, type OverlayDefinition } from './catalog.ts';
@@ -92,12 +92,45 @@ export class OverlayManager {
           if (data) this.cache.markApplied(key);
         }
       }
-      for (const layer of overlay.layers(this.theme)) {
-        if (!map.getLayer(layer.id)) map.addLayer(layer);
-      }
+      const specs = overlay.sources ? this.cache.getSpecs(dataKeyOf(overlay)) : undefined;
+      if (specs) this.addSources(specs);
+      this.addLayers(overlay);
     }
     this.installed = true;
     this.sync();
+  }
+
+  private addSources(specs: Record<string, SourceSpecification>): void {
+    for (const [id, spec] of Object.entries(specs)) {
+      if (!this.map?.getSource(id)) this.map?.addSource(id, spec);
+    }
+  }
+
+  /**
+   * Ajoute les couches d'un calque dont la source est en place (les sources
+   * différées arrivent plus tard), sous la couche du fond indiquée.
+   */
+  private addLayers(overlay: OverlayDefinition): void {
+    const map = this.map;
+    if (!map) return;
+    const before =
+      overlay.beforeBasemapLayer && map.getLayer(overlay.beforeBasemapLayer)
+        ? overlay.beforeBasemapLayer
+        : undefined;
+    for (const layer of overlay.layers(this.theme)) {
+      const source = (layer as { source?: string }).source;
+      if (map.getLayer(layer.id) || (source && !map.getSource(source))) continue;
+      map.addLayer(layer, before);
+    }
+  }
+
+  private applyVisibility(overlay: OverlayDefinition): void {
+    const on = this.visible.has(overlay.id);
+    for (const layer of overlay.layers(this.theme)) {
+      if (this.map?.getLayer(layer.id)) {
+        this.map.setLayoutProperty(layer.id, 'visibility', on ? 'visible' : 'none');
+      }
+    }
   }
 
   /** Visibilité des couches, masquage des doublons du fond, chargement à la demande. */
@@ -106,12 +139,8 @@ export class OverlayManager {
     if (!map || !this.installed) return;
     const hidden: string[] = [];
     for (const overlay of OVERLAYS) {
-      const on = this.visible.has(overlay.id);
-      for (const layer of overlay.layers(this.theme)) {
-        if (map.getLayer(layer.id))
-          map.setLayoutProperty(layer.id, 'visibility', on ? 'visible' : 'none');
-      }
-      if (on) {
+      this.applyVisibility(overlay);
+      if (this.visible.has(overlay.id)) {
         hidden.push(...(overlay.hidesBasemapLayers ?? []));
         void this.ensureData(overlay);
       }
@@ -125,11 +154,26 @@ export class OverlayManager {
   }
 
   private async ensureData(overlay: OverlayDefinition): Promise<void> {
+    const key = dataKeyOf(overlay);
+    if (overlay.sources) {
+      const loader = overlay.sources;
+      if (this.status[overlay.id] === 'idle' || this.status[overlay.id] === 'error') {
+        this.status[overlay.id] = 'loading';
+      }
+      try {
+        this.addSources(await this.cache.loadSpecs(key, () => loader(location.origin)));
+        this.addLayers(overlay);
+        this.applyVisibility(overlay);
+        this.status[overlay.id] = 'ready';
+      } catch {
+        this.status[overlay.id] = 'error';
+      }
+      return;
+    }
     if (!overlay.load) {
       this.status[overlay.id] = 'ready';
       return;
     }
-    const key = dataKeyOf(overlay);
     if (this.status[overlay.id] === 'idle' || this.status[overlay.id] === 'error') {
       this.status[overlay.id] = 'loading';
     }

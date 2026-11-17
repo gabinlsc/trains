@@ -321,3 +321,21 @@ doublons ; la tache urbaine réutilise les zones urbaines du fond.
 compressé) et les communes sont chargés. Un fichier manquant n'affecte que
 son calque, signalé dans le panneau. La légende associe à chaque couleur un
 libellé et, pour les limites et lignes fermées, un motif pointillé.
+
+## ADR-019 — Relief : tuiles Terrarium servies, courbes calculées par le navigateur
+
+**Contexte.** La carte doit proposer un relief ombré et des courbes de
+niveau, auto-hébergés. Des courbes précalculées pour toute la France
+pèseraient des dizaines de mégaoctets par équidistance.
+
+**Décision.** Le pipeline réécrit en pyramide (zooms 5 à 9) les tuiles
+Terrarium déjà téléchargées pour la grille d'altitude, sous
+`/data/<version>/relief/` (une seule entrée au manifeste). L'ombrage est
+rendu par MapLibre (`raster-dem`) ; les courbes sont générées à la volée dans
+un worker par `maplibre-contour`, à partir des mêmes tuiles, avec une
+équidistance qui s'affine en zoomant. Ces sources ne sont créées qu'à
+l'activation du calque, une fois la version connue.
+
+**Conséquences.** Environ 106 Mo sur le serveur, quelques tuiles de 120 Ko
+téléchargées à l'affichage. Au-delà du zoom 9, l'ombrage est suréchantillonné
+(précision ≈ 200 m, cohérente avec la grille du moteur).

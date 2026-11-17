@@ -1,8 +1,14 @@
 import type { FeatureCollection } from 'geojson';
-import type { LayerSpecification } from 'maplibre-gl';
+import type { LayerSpecification, SourceSpecification } from 'maplibre-gl';
 import type { MessageKey } from '../../i18n/index.ts';
 import { BASEMAP_SOURCE, type Theme } from '../style.ts';
 import { loadDataFile, tableToPoints, type Table } from './data.ts';
+import {
+  CONTOURS_LAYER,
+  RELIEF_CONTOURS_SOURCE,
+  RELIEF_DEM_SOURCE,
+  reliefSources,
+} from './relief.ts';
 
 export type LayerGroup = 'environment' | 'network' | 'population';
 
@@ -24,6 +30,13 @@ export interface OverlayDefinition {
   /** Clé de donnée partagée : deux calques lisant le même fichier partagent la source. */
   dataKey?: string;
   layers: (theme: Theme) => LayerSpecification[];
+  /**
+   * Sources non GeoJSON (raster, vecteur), connues seulement après lecture du
+   * manifeste : les couches ne sont ajoutées qu'une fois ces sources en place.
+   */
+  sources?: (origin: string) => Promise<Record<string, SourceSpecification>>;
+  /** Couche du fond de carte sous laquelle insérer celles du calque. */
+  beforeBasemapLayer?: string;
   /** Couches du fond de carte masquées quand le calque est actif (doublons). */
   hidesBasemapLayers?: string[];
 }
@@ -39,6 +52,72 @@ export const sourceId = (dataKey: string): string => `overlay-${dataKey}`;
 export const dataKeyOf = (overlay: OverlayDefinition): string => overlay.dataKey ?? overlay.id;
 
 export const OVERLAYS: readonly OverlayDefinition[] = [
+  {
+    id: 'hillshade',
+    group: 'environment',
+    label: 'layers.hillshade',
+    defaultVisible: false,
+    swatch: (t) => (t === 'dark' ? '#5b6472' : '#9a958c'),
+    dataKey: 'relief',
+    sources: reliefSources,
+    // Sous l'eau et les routes : le relief reste un fond.
+    beforeBasemapLayer: 'water',
+    layers: (t) => [
+      {
+        id: 'hillshade-layer',
+        type: 'hillshade',
+        source: RELIEF_DEM_SOURCE,
+        paint: {
+          'hillshade-exaggeration': 0.4,
+          'hillshade-shadow-color': t === 'dark' ? '#000000' : '#5a4f3e',
+          'hillshade-highlight-color': t === 'dark' ? '#3a4250' : '#ffffff',
+          'hillshade-accent-color': t === 'dark' ? '#1c222a' : '#8a7f6b',
+        },
+      },
+    ],
+  },
+  {
+    id: 'contours',
+    group: 'environment',
+    label: 'layers.contours',
+    defaultVisible: false,
+    swatch: (t) => (t === 'dark' ? '#8a6e4b' : '#a0794b'),
+    dataKey: 'relief',
+    sources: reliefSources,
+    beforeBasemapLayer: 'roads_tunnels_other_casing',
+    layers: (t) => [
+      {
+        id: 'contours-line',
+        type: 'line',
+        source: RELIEF_CONTOURS_SOURCE,
+        'source-layer': CONTOURS_LAYER,
+        paint: {
+          'line-color': t === 'dark' ? '#8a6e4b' : '#a0794b',
+          // Courbes maîtresses plus épaisses.
+          'line-width': ['match', ['get', 'level'], 1, 1, 0.5],
+          'line-opacity': 0.6,
+        },
+      },
+      {
+        id: 'contours-label',
+        type: 'symbol',
+        source: RELIEF_CONTOURS_SOURCE,
+        'source-layer': CONTOURS_LAYER,
+        filter: ['>', ['get', 'level'], 0],
+        layout: {
+          'symbol-placement': 'line',
+          'text-field': ['concat', ['number-format', ['get', 'ele'], { locale: 'fr' }], ' m'],
+          'text-font': FONT,
+          'text-size': 10,
+        },
+        paint: {
+          'text-color': t === 'dark' ? '#b89a72' : '#7a5a33',
+          'text-halo-color': halo(t),
+          'text-halo-width': 1.2,
+        },
+      },
+    ],
+  },
   {
     id: 'urban',
     group: 'environment',
@@ -396,4 +475,5 @@ export const DATA_ATTRIBUTIONS: readonly string[] = [
   'INSEE, IGN, Etalab',
   '© SNCF Réseau, SNCF Gares &amp; Connexions (ODbL)',
   'Parcs nationaux de France',
+  'Relief : EU-DEM (Copernicus), SRTM et GMTED2010 (USGS), ETOPO1 (NOAA)',
 ];

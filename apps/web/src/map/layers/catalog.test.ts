@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { t } from '../../i18n/index.ts';
 import { BASEMAP_SOURCE } from '../style.ts';
 import { DATA_ATTRIBUTIONS, dataKeyOf, GROUPS, OVERLAYS, sourceId } from './catalog.ts';
+import { RELIEF_CONTOURS_SOURCE, RELIEF_DEM_SOURCE } from './relief.ts';
 
 describe('catalogue des calques', () => {
   it('a des identifiants de calques et de couches uniques', () => {
@@ -14,6 +15,8 @@ describe('catalogue des calques', () => {
   it('relie chaque couche à une source existante', () => {
     const sources = new Set([
       BASEMAP_SOURCE,
+      RELIEF_DEM_SOURCE,
+      RELIEF_CONTOURS_SOURCE,
       ...OVERLAYS.filter((o) => o.load).map((o) => sourceId(dataKeyOf(o))),
     ]);
     for (const overlay of OVERLAYS) {
@@ -46,6 +49,14 @@ describe('catalogue des calques', () => {
   });
 
   it('crédite les producteurs de données', () => {
-    expect(DATA_ATTRIBUTIONS.join(' ')).toMatch(/INSEE.*SNCF Réseau.*Parcs nationaux/s);
+    expect(DATA_ATTRIBUTIONS.join(' ')).toMatch(/INSEE.*SNCF Réseau.*Parcs nationaux.*EU-DEM/s);
+  });
+
+  it('partage les sources du relief entre ombrage et courbes', () => {
+    const relief = OVERLAYS.filter((o) => o.sources).map((o) => [o.id, dataKeyOf(o)]);
+    expect(relief).toEqual([
+      ['hillshade', 'relief'],
+      ['contours', 'relief'],
+    ]);
   });
 });

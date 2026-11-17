@@ -35,6 +35,8 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   proportionnelle), tache urbaine, cours d'eau, parcs nationaux, limites
   des départements et des régions ; panneau accessible au clavier avec
   légende, choix mémorisés, attributions de toutes les sources.
+- Relief ombré et courbes de niveau (cotes en mètres), à partir de tuiles
+  d'altitude produites par le pipeline ; courbes calculées dans un worker.
 - Routage côté client, page 404, bascule de thème mémorisée.
 - Tests de bout en bout Playwright (job CI `e2e`).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
@@ -45,6 +47,8 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Modifié
 
+- Les réponses HTTP 400 intermittentes du WFS de la Géoplateforme sont
+  retentées au lieu d'interrompre le pipeline.
 - Un échec du pipeline de données ou du fond de carte n'interrompt plus le
   déploiement : la génération précédente reste en service.
 

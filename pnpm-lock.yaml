@@ -90,6 +90,9 @@ importers:
       '@trains/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      maplibre-contour:
+        specifier: ^0.1.1
+        version: 0.1.1
       maplibre-gl:
         specifier: ^6.18.0
         version: 6.18.0
@@ -1416,6 +1419,9 @@ packages:
 
   magicast@0.5.5:
     resolution: {integrity: sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==}
+
+  maplibre-contour@0.1.1:
+    resolution: {integrity: sha512-0m267124bx+LJ5zM1mpB23uvO4sCrgOb4dWgwbUbGWGsDsWNA4g93XTXPoRQga6GAD6TDI7tzyowBzdADSPusg==}
 
   maplibre-gl@6.18.0:
     resolution: {integrity: sha512-8ucT+RhJtEZGFvWGPioVQwvOPMAIuUehEgxl2dELw9aJmX4SpUi+OCHHAD33B9EuohNC7kC/gccJacUgTMQfQQ==}
@@ -3097,6 +3103,8 @@ snapshots:
       '@babel/parser': 7.29.14
       '@babel/types': 7.29.14
       source-map-js: 1.2.2
+
+  maplibre-contour@0.1.1: {}
 
   maplibre-gl@6.18.0:
     dependencies:

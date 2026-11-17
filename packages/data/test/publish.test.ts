@@ -27,6 +27,10 @@ const step: Step = {
     );
     await io.write('sortie.json', JSON.stringify(data.map((n) => n * 2)), data.length);
     await io.write('tuiles.bin', new Uint8Array(tiles.length), tiles.length);
+    await io.writeTree('arbre', [
+      { path: '1/b.txt', content: new TextEncoder().encode('b') },
+      { path: '0/a.txt', content: new TextEncoder().encode('a') },
+    ]);
   },
 };
 
@@ -69,9 +73,13 @@ describe('generate', () => {
     // La page JSON et les deux tuiles sont cumulées sous la même source.
     expect(manifest.sources[0]).toMatchObject({ id: 'essai', files: 3, bytes: 17 });
     expect(manifest.outputs.map((o) => [o.file, o.count])).toEqual([
+      ['arbre/', 2],
       ['sortie.json', 3],
       ['tuiles.bin', 2],
     ]);
+    expect(await readFile(join(dataDir, 'data', 'current', 'arbre', '1', 'b.txt'), 'utf8')).toBe(
+      'b',
+    );
     expect(await readFile(join(dataDir, 'data', 'current', 'sortie.json'), 'utf8')).toBe('[2,4,6]');
   });
 

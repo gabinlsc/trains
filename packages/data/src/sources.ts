@@ -11,6 +11,8 @@ export interface SourceDefinition {
   license: string;
   url: string;
   sha256?: string;
+  /** Codes HTTP à retenter pour cette source (voir DownloadOptions). */
+  retryStatuses?: readonly number[];
 }
 
 const SNCF = 'https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets';
@@ -74,6 +76,10 @@ export const SOURCES = {
     producer: 'IGN, BD CARTO (Géoplateforme)',
     license: 'Licence Ouverte 2.0 (Etalab)',
     url: `${IGN_WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDCARTO_V5:troncon_hydrographique`,
+    // Le WFS de la Géoplateforme renvoie par moments des 400 sur des
+    // requêtes valides (observé le 17/11/2026, la même requête réussissant
+    // juste après) : on les retente comme des erreurs passagères.
+    retryStatuses: [400],
   },
   parcsNationaux: {
     id: 'parcs-nationaux',
