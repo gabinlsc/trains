@@ -3,6 +3,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import type { Config } from './config.ts';
 import type { DatabaseHandle } from './db/database.ts';
+import { elevationRoutes } from './routes/elevation.ts';
 import { healthRoutes } from './routes/health.ts';
 
 declare module 'fastify' {
@@ -59,5 +60,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
 
   healthRoutes(app);
+  elevationRoutes(app);
   return app;
 }

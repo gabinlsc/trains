@@ -56,6 +56,9 @@ importers:
       '@fastify/rate-limit':
         specifier: ^11.2.2
         version: 11.2.2
+      '@trains/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@trains/shared':
         specifier: workspace:*
         version: link:../../packages/shared

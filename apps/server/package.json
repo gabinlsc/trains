@@ -16,6 +16,7 @@
   "dependencies": {
     "@fastify/helmet": "^13.2.0",
     "@fastify/rate-limit": "^11.2.2",
+    "@trains/engine": "workspace:*",
     "@trains/shared": "workspace:*",
     "better-sqlite3": "^13.2.0",
     "fastify": "^5.12.8",
