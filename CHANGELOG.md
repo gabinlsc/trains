@@ -41,6 +41,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Tests de bout en bout Playwright (job CI `e2e`).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
 
+### Corrigé
+
+- Plus d'avertissement de dépréciation de Fastify au démarrage de l'API.
+
 ### Modifié
 
 - Les réponses HTTP 400 intermittentes du WFS de la Géoplateforme sont
