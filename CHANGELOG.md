@@ -7,6 +7,13 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Modèle du réseau (nœuds, tronçons, gares, ouvrages d'art) validé par Zod,
+  opérations d'édition immuables (ajout, déplacement, scission, fusion,
+  suppression en cascade, copier-coller) et historique d'annulation
+  illimité.
+
 ## [0.2.0] — 2026-11-17
 
 Phase 1 — Carte : données ouvertes, fond de carte auto-hébergé et calques.
