@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import type { DataManifest, ManifestOutput, ManifestSource } from '@trains/shared';
 import { download, mapConcurrent, type Downloaded, type FetchLike } from './http.ts';
@@ -25,6 +25,12 @@ export interface StepIO {
   ): Promise<Downloaded[]>;
   /** Écrit un fichier de sortie et l'inscrit au manifeste. */
   write(name: string, content: string | Uint8Array, count: number): Promise<void>;
+  /**
+   * Écrit une arborescence de fichiers (ex. tuiles) sous `dir`, inscrite au
+   * manifeste comme une seule sortie : des centaines d'entrées alourdiraient
+   * le manifeste, relu à chaque ouverture de la carte.
+   */
+  writeTree(dir: string, files: readonly { path: string; content: Uint8Array }[]): Promise<void>;
   log(message: string): void;
 }
 
@@ -95,6 +101,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
     download(url, join(cacheDir, source.id, `${cacheName(url)}.${extension}`), {
       sourceId: source.id,
       ...(source.sha256 && url === source.url ? { sha256: source.sha256 } : {}),
+      ...(source.retryStatuses ? { retryStatuses: source.retryStatuses } : {}),
       ...(fetchImpl ? { fetchImpl } : {}),
       ...(backoffMs ? { backoffMs } : {}),
       log,
@@ -142,6 +149,19 @@ export async function runPipeline(options: PipelineOptions): Promise<DataManifes
         bytes: data.byteLength,
         count,
       });
+    },
+    async writeTree(dir, files) {
+      const hash = createHash('sha256');
+      let bytes = 0;
+      const sorted = [...files].sort((a, b) => a.path.localeCompare(b.path));
+      for (const file of sorted) {
+        const target = join(outDir, dir, file.path);
+        await mkdir(dirname(target), { recursive: true });
+        await writeFile(target, file.content);
+        hash.update(file.path).update(file.content);
+        bytes += file.content.byteLength;
+      }
+      outputs.push({ file: `${dir}/`, sha256: hash.digest('hex'), bytes, count: files.length });
     },
     log,
   };
