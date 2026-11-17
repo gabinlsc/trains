@@ -78,3 +78,16 @@ test('le panneau de tracé indique le rayon minimal de la vitesse choisie', asyn
   await page.getByLabel('Vitesse de conception').selectOption('320');
   await expect(page.getByText('Rayon minimal : 7 000 m')).toBeVisible();
 });
+
+test('le profil en long s’ouvre sur le tronçon sélectionné, ou explique son absence', async ({
+  page,
+}) => {
+  await openMap(page);
+  const drawer = page.getByRole('region', { name: 'Profil en long' });
+  await expect(drawer).toContainText('Sélectionnez un tronçon');
+  await drawLine(page);
+  // Sans serveur d'altitude (cas de l'intégration continue), le message est explicite.
+  await expect(drawer).toContainText('Profil indisponible');
+  await page.getByRole('button', { name: 'Masquer le profil en long' }).click();
+  await expect(drawer.getByText('Profil indisponible')).toBeHidden();
+});

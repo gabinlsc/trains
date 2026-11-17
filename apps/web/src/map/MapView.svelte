@@ -18,6 +18,7 @@
   import { EditorController } from '../editor/controller.ts';
   import type { SnapTarget } from '../editor/snap.ts';
   import { EditorStore } from '../editor/store.svelte.ts';
+  import ProfileDrawer from '../editor/ProfileDrawer.svelte';
   import Toolbar from '../editor/Toolbar.svelte';
   import { loadDataFile, type Table } from './layers/data.ts';
   import { DATA_ATTRIBUTIONS } from './layers/catalog.ts';
@@ -185,6 +186,7 @@
   {#if !webglError}
     <LayersPanel manager={overlays} />
     <Toolbar store={editor} />
+    <ProfileDrawer store={editor} />
   {/if}
   {#if basemapError}
     <p class="banner" role="status">{t('map.basemapUnavailable')}</p>

@@ -382,3 +382,26 @@ extrémité aimantée à une gare réelle crée une gare liée à son code UIC.
 **Conséquences.** Changer la vitesse d'un tronçon redessine ses courbes sans
 toucher aux points saisis. Les clothoïdes de raccordement ne sont pas
 modélisées : à l'échelle du jeu, l'arc circulaire suffit.
+
+## ADR-022 — Profil en long servi par l'API, ligne rouge par programmation dynamique
+
+**Contexte.** La grille d'altitude pèse 48 Mo (ADR-015) : trop pour le
+navigateur. Le profil en long doit pourtant se mettre à jour pendant
+l'édition, et les tunnels et viaducs être proposés automatiquement.
+
+**Décision.** `POST /api/elevation/profile` échantillonne un tracé (pas de
+100 m, 5 000 points au plus) dans la grille gardée en mémoire par le serveur
+et rechargée à chaque nouvelle génération de données. Le navigateur calcule
+ensuite la ligne rouge avec le moteur : cote de la voie qui respecte la
+rampe maximale de la vitesse (25 ‰, 35 ‰ en LGV) en minimisant la somme d'un
+coût d'écart au terrain, résolue par programmation dynamique sur des cotes
+au pas de 0,5 m. Ce coût croît avec l'écart jusqu'à 15 m (limite des
+terrassements), puis presque plus : un ouvrage coûte surtout par sa
+longueur. Au-delà de 15 m d'écart sur au moins 100 m, un tunnel ou un viaduc
+est proposé.
+
+**Conséquences.** Le profil arrive en quelques dizaines de millisecondes
+pour un tronçon de 100 km. La ligne rouge suit le terrain partout où il est
+conforme. En montagne, elle épouse encore le relief (succession d'ouvrages
+courts) plutôt que de plonger dans un tunnel de base : le coût réel des
+ouvrages, introduit avec le modèle économique, permettra d'arbitrer.
