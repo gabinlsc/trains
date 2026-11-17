@@ -28,6 +28,11 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Inspecteur de la sélection : nom, gare (type, quais, terminus),
   saut-de-mouton, voies, vitesse, électrification, signalisation et
   écartement d'un tronçon ; gares dessinées selon leur importance.
+- Sauvegarde automatique de la partie dans le navigateur (IndexedDB),
+  restaurée à l'ouverture de la carte ; nom de la partie, nouvelle partie.
+- Export et import de sauvegardes JSON versionnées, avec migrations des
+  anciennes versions et refus motivé des fichiers invalides ; export du
+  réseau en GeoJSON.
 - API `POST /api/elevation/profile` : altitude le long d'un tracé, la grille
   restant sur le serveur.
 

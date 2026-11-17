@@ -44,6 +44,8 @@ export interface DraftPoint {
  */
 export class EditorStore {
   network = $state.raw<Network>(EMPTY_NETWORK);
+  /** Nom de la partie, repris dans les sauvegardes et les fichiers exportés. */
+  name = $state('Mon réseau');
   tool = $state<Tool>('select');
   readonly selection = new SvelteSet<Id>();
   /** Caractéristiques appliquées aux nouveaux tronçons. */
@@ -86,6 +88,15 @@ export class EditorStore {
       this.error = error.message;
       return false;
     }
+  }
+
+  /** Remplace tout le réseau (chargement, import) : l'historique repart de zéro. */
+  load(network: Network, name?: string): void {
+    this.history.reset(network);
+    if (name) this.name = name;
+    this.selection.clear();
+    this.error = null;
+    this.refresh();
   }
 
   undo(): void {

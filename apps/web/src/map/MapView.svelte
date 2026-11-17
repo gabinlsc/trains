@@ -21,6 +21,9 @@
   import Inspector from '../editor/Inspector.svelte';
   import ProfileDrawer from '../editor/ProfileDrawer.svelte';
   import Toolbar from '../editor/Toolbar.svelte';
+  import GamePanel from '../storage/GamePanel.svelte';
+  import { GamePersistence } from '../storage/persistence.svelte.ts';
+  import { GameStorage } from '../storage/projects.ts';
   import { loadDataFile, type Table } from './layers/data.ts';
   import { DATA_ATTRIBUTIONS } from './layers/catalog.ts';
   import LayersPanel from './layers/LayersPanel.svelte';
@@ -35,6 +38,11 @@
   let appliedTheme = theme.effective;
   const overlays = new OverlayManager();
   const editor = new EditorStore();
+  const persistence = new GamePersistence(
+    editor,
+    typeof indexedDB === 'undefined' ? null : new GameStorage(indexedDB),
+  );
+  void persistence.restore();
   let controller: EditorController | null = null;
   let stationsRequested = false;
 
@@ -169,18 +177,29 @@
     controller?.render(editor.network, [...editor.selection]);
   });
 
+  // Sauvegarde locale différée après chaque changement du réseau ou du nom.
+  $effect(() => {
+    persistence.changed(editor.network, editor.name);
+  });
+
   $effect(() => {
     if (editor.tool === 'draw') void loadSnapStations();
     else controller?.cancel();
   });
 
   onDestroy(() => {
+    persistence.schedule.flush();
     map?.remove();
     map = null;
   });
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window
+  onkeydown={onKeydown}
+  onpagehide={() => {
+    persistence.schedule.flush();
+  }}
+/>
 
 <div class="map-wrap">
   <div class="map" bind:this={container} role="region" aria-label={t('map.label')}></div>
@@ -188,6 +207,7 @@
     <LayersPanel manager={overlays} />
     <Toolbar store={editor} />
     <Inspector store={editor} />
+    <GamePanel store={editor} {persistence} />
     <ProfileDrawer store={editor} />
   {/if}
   {#if basemapError}
