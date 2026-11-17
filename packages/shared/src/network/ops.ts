@@ -228,3 +228,88 @@ export function mergeAtNode(
     spec: a.spec,
   });
 }
+
+/** Point d'un tracé le plus proche d'une position, avec sa place dans la polyligne. */
+export interface PathProjection {
+  /** Index du premier sommet de la partie de tracé concernée. */
+  index: number;
+  /** Position relative sur cette partie, de 0 à 1. */
+  t: number;
+  point: Position;
+  /** Distance approchée à la position (m). */
+  distance: number;
+}
+
+const M_PER_DEG = 111_320;
+
+/**
+ * Projection orthogonale sur une polyligne, dans un repère plan local
+ * (longitudes corrigées de la latitude) : largement assez précis à l'échelle
+ * d'un clic sur la carte.
+ */
+export function projectOnPath(path: readonly Position[], position: Position): PathProjection {
+  const k = Math.cos((position[1] * Math.PI) / 180);
+  let best: PathProjection = {
+    index: 0,
+    t: 0,
+    point: path[0] ?? position,
+    distance: Infinity,
+  };
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i] as Position;
+    const b = path[i + 1] as Position;
+    const dx = (b[0] - a[0]) * k;
+    const dy = b[1] - a[1];
+    const len2 = dx * dx + dy * dy;
+    const px = (position[0] - a[0]) * k;
+    const py = position[1] - a[1];
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / len2));
+    const distance = Math.hypot(px - t * dx, py - t * dy) * M_PER_DEG;
+    if (distance < best.distance) {
+      best = {
+        index: i,
+        t,
+        point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t],
+        distance,
+      };
+    }
+  }
+  return best;
+}
+
+/**
+ * Pose un nœud sur un tronçon existant, au point le plus proche de
+ * `position` : le tronçon est scindé en deux et le nœud pourra recevoir un
+ * troisième tronçon (bifurcation, raccordement). Tout près d'une extrémité
+ * (moins de `toleranceM`), c'est le nœud existant qui est renvoyé.
+ */
+export function insertNodeOnSegment(
+  network: Network,
+  segmentId: Id,
+  position: Position,
+  ids: IdFactory = randomId,
+  toleranceM = 5,
+): { network: Network; node: NetworkNode } {
+  const segment = requireSegment(network, segmentId);
+  const path = segmentPath(network, segment);
+  const projection = projectOnPath(path, position);
+  const from = requireNode(network, segment.from);
+  const to = requireNode(network, segment.to);
+  const near = (p: Position): boolean =>
+    projectOnPath([p, p], projection.point).distance < toleranceM;
+  if (near(from.position)) return { network, node: from };
+  if (near(to.position)) return { network, node: to };
+  // Un sommet intermédiaire déjà présent sert de point de coupure ; sinon on
+  // insère le point projeté dans le tracé avant de scinder.
+  const viaIndex = segment.via.findIndex((p) => near(p));
+  if (viaIndex >= 0) {
+    const split = splitSegment(network, segmentId, viaIndex, ids);
+    return { network: split.network, node: split.node };
+  }
+  // Le sommet path[index] est via[index - 1] : le point s'insère après lui.
+  const via = [...segment.via];
+  via.splice(projection.index, 0, projection.point);
+  const withPoint = updateSegment(network, segmentId, { via });
+  const split = splitSegment(withPoint, segmentId, projection.index, ids);
+  return { network: split.network, node: split.node };
+}

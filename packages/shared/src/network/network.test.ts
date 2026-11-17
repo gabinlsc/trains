@@ -6,9 +6,11 @@ import { EMPTY_NETWORK, NetworkSchema, type Network, type Position } from './mod
 import {
   addNode,
   addSegment,
+  insertNodeOnSegment,
   mergeAtNode,
   moveNode,
   NetworkError,
+  projectOnPath,
   randomId,
   removeNode,
   removeSegment,
@@ -162,6 +164,45 @@ describe('opérations', () => {
     expect(merged.segment.to).toBe('n_000003');
     expect(merged.segment.via).toEqual([[2.6, 49.5], ARRAS, [2.9, 50.5]]);
     expect(merged.network.nodes.n_000002).toBeUndefined();
+  });
+
+  it('projette une position sur un tracé', () => {
+    const p = projectOnPath(
+      [
+        [2, 48],
+        [2, 49],
+        [3, 49],
+      ],
+      [2.5, 49.1],
+    );
+    expect(p.index).toBe(1);
+    expect(p.t).toBeCloseTo(0.5);
+    expect(p.point).toEqual([2.5, 49]);
+    expect(p.distance).toBeCloseTo(11_132, -1);
+  });
+
+  it('pose une bifurcation sur un tronçon existant', () => {
+    const { network, ids } = line();
+    // Entre Arras et Lille, sans sommet intermédiaire : le point est inséré.
+    const result = insertNodeOnSegment(network, 's_000005', [2.95, 50.47], ids);
+    expect(result.network.segments.s_000005).toBeUndefined();
+    const around = segmentsAt(result.network, result.node.id);
+    expect(around).toHaveLength(2);
+    expect(result.node.kind).toBe('waypoint');
+    const branched = addNode(result.network, [3.2, 50.3], { ids });
+    const junction = addSegment(branched.network, result.node.id, branched.node.id, { ids });
+    expect(junction.network.nodes[result.node.id]?.kind).toBe('junction');
+    expect(NetworkSchema.safeParse(junction.network).success).toBe(true);
+  });
+
+  it('réutilise un sommet ou une extrémité proche au lieu de scinder', () => {
+    const { network, ids } = line();
+    const onVia = insertNodeOnSegment(network, 's_000004', [2.60001, 49.50001], ids);
+    expect(onVia.node.position).toEqual([2.6, 49.5]);
+    expect(Object.keys(onVia.network.segments)).toHaveLength(3);
+    const atEnd = insertNodeOnSegment(network, 's_000004', ARRAS, ids);
+    expect(atEnd.node.id).toBe('n_000002');
+    expect(atEnd.network).toBe(network);
   });
 
   it('refuse les fusions incohérentes', () => {
