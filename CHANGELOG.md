@@ -7,6 +7,13 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Modèle du réseau (nœuds, tronçons, gares, ouvrages d'art) validé par Zod,
+  opérations d'édition immuables (ajout, déplacement, scission, fusion,
+  suppression en cascade, copier-coller) et historique d'annulation
+  illimité.
+
 ## [0.2.0] — 2026-11-17
 
 Phase 1 — Carte : données ouvertes, fond de carte auto-hébergé et calques.
@@ -42,10 +49,6 @@ Phase 1 — Carte : données ouvertes, fond de carte auto-hébergé et calques.
 - Relief ombré et courbes de niveau (cotes en mètres), à partir de tuiles
   d'altitude produites par le pipeline ; courbes calculées dans un worker.
 - Routage côté client, page 404, bascule de thème mémorisée.
-- Modèle du réseau (nœuds, tronçons, gares, ouvrages d'art) validé par Zod,
-  opérations d'édition immuables (ajout, déplacement, scission, fusion,
-  suppression en cascade, copier-coller) et historique d'annulation
-  illimité.
 - Tests de bout en bout Playwright (job CI `e2e`).
 - `docs/DONNEES.md` : sources, licences, formats et choix de traitement.
 
