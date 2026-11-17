@@ -423,3 +423,23 @@ d'historique ; la frappe d'un nom n'en forme qu'une.
 
 **Conséquences.** Un raccordement se trace comme une voie ordinaire. Le
 nombre de quais proposé suit le type de gare (1 à 6) mais reste libre.
+
+## ADR-024 — Sauvegarde locale en IndexedDB, fichier JSON versionné
+
+**Contexte.** Avant les comptes et le partage (phase 5), le joueur ne doit
+rien perdre en fermant l'onglet, et doit pouvoir emporter sa partie.
+
+**Décision.** Un seul format de fichier, `rails-de-france/sauvegarde`,
+porte un numéro de version. L'export JSON, l'import et le stockage dans le
+navigateur l'utilisent tous : IndexedDB conserve la sauvegarde sérialisée,
+pas des objets, et sa lecture passe par le même chemin qu'un import
+(migrations successives depuis la version du fichier, puis validation Zod
+complète du réseau). Un fichier d'une version future ou incohérent est
+refusé avec un message clair. L'écriture locale est différée de 800 ms
+après la dernière modification et forcée à la fermeture de la page. Un
+export GeoJSON (WGS 84) complète l'ensemble pour les outils SIG, en sortie
+seulement.
+
+**Conséquences.** Les migrations de format, écrites une fois, servent aussi
+bien aux fichiers échangés qu'aux parties conservées. Sans IndexedDB
+(navigation privée stricte), l'éditeur fonctionne et invite à exporter.
