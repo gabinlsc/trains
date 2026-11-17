@@ -1,9 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
-// Données vides : la CI n'a pas de fond de carte, ce qui éprouve aussi le
-// comportement en mode dégradé.
-const dataDir = fileURLToPath(new URL('./e2e/fixtures/data', import.meta.url));
+// DATA_DIR d'essai : un jeu de données minimal (e2e/fixtures/data/), sans
+// fond de carte, ce qui éprouve aussi le comportement en mode dégradé.
+const dataDir = fileURLToPath(new URL('./e2e/fixtures', import.meta.url));
 
 export default defineConfig({
   testDir: './e2e',
