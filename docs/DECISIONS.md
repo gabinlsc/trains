@@ -339,3 +339,26 @@ l'activation du calque, une fois la version connue.
 **Conséquences.** Environ 106 Mo sur le serveur, quelques tuiles de 120 Ko
 téléchargées à l'affichage. Au-delà du zoom 9, l'ombrage est suréchantillonné
 (précision ≈ 200 m, cohérente avec la grille du moteur).
+
+## ADR-020 — Modèle de réseau immuable et historique par commandes
+
+**Contexte.** L'éditeur doit offrir une annulation illimitée, la sélection
+multiple, le copier-coller, la scission et la fusion de tronçons, la
+suppression en cascade. Le même réseau est sauvegardé, partagé et revalidé
+par le serveur pour le calcul des scores.
+
+**Décision.** Le réseau est un graphe sérialisable (`nodes` et `segments`
+indexés par identifiant, tracé intermédiaire dans `via`), décrit par un
+schéma Zod dans `packages/shared` qui vérifie aussi sa cohérence (extrémités
+existantes, gares complètes, pas de boucle). Les opérations d'édition sont
+des fonctions pures qui renvoient un nouveau réseau en partageant tout ce
+qui n'a pas changé. L'historique suit le patron commande : une commande
+transforme l'état, l'historique garde les paires avant/après ; les commandes
+d'un même geste (glisser un nœud) fusionnent en une étape. La nature d'un
+nœud (passage ou bifurcation) est déduite du nombre de tronçons.
+
+**Conséquences.** Annuler ou rétablir est instantané et sans limite (500
+étapes testées) ; aucune opération inverse à écrire ni à maintenir. Chaque
+modification copie les dictionnaires de premier niveau (quelques
+millisecondes pour 10 000 tronçons). Les identifiants aléatoires préfixés
+(`n_…`, `s_…`) restent courts dans les sauvegardes.
