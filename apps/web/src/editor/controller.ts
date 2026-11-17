@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson';
-import type { Id, Position } from '@trains/shared';
+import { projectOnPath, segmentPath, type Id, type Position } from '@trains/shared';
 import type {
   GeoJSONSource,
   LayerSpecification,
@@ -9,7 +9,7 @@ import type {
 } from 'maplibre-gl';
 import type { Theme } from '../map/style.ts';
 import { networkToGeoJSON, previewPath } from './geometry.ts';
-import { findSnap, type SnapTarget } from './snap.ts';
+import { findSnap, SNAP_RADIUS_PX, type SnapTarget } from './snap.ts';
 import type { DraftPoint, EditorStore } from './store.svelte.ts';
 
 const SRC = {
@@ -97,10 +97,38 @@ function layers(theme: Theme): LayerSpecification[] {
       type: 'circle',
       source: SRC.nodes,
       paint: {
-        'circle-radius': ['match', ['get', 'kind'], 'station', 6, 'junction', 5, 3.5],
+        // Gares de plus en plus marquées selon leur importance ; bifurcation
+        // pleine, cerclée d'encre si elle est dénivelée (saut-de-mouton).
+        'circle-radius': [
+          'match',
+          ['get', 'station'],
+          'halte',
+          4.5,
+          'gare',
+          6,
+          'correspondance',
+          7.5,
+          'tgv',
+          8.5,
+          ['match', ['get', 'kind'], 'junction', 5, 3.5],
+        ],
         'circle-color': ['match', ['get', 'kind'], 'station', paper, accent],
-        'circle-stroke-color': ['match', ['get', 'kind'], 'station', ink, paper],
-        'circle-stroke-width': ['match', ['get', 'kind'], 'station', 2.5, 1.5],
+        'circle-stroke-color': [
+          'case',
+          ['==', ['get', 'kind'], 'station'],
+          ['match', ['get', 'station'], 'tgv', accent, ink],
+          ['get', 'flyover'],
+          ink,
+          paper,
+        ],
+        'circle-stroke-width': [
+          'case',
+          ['==', ['get', 'kind'], 'station'],
+          ['match', ['get', 'station'], 'halte', 1.5, 2.5],
+          ['get', 'flyover'],
+          2.5,
+          1.5,
+        ],
       },
     },
     {
@@ -237,8 +265,34 @@ export class EditorController {
 
   private pointAt(e: MapMouseEvent): DraftPoint {
     const position: Position = [e.lngLat.lng, e.lngLat.lat];
-    const snap = findSnap(e.point, this.candidates(), (p) => this.map.project(p));
+    const snap =
+      findSnap(e.point, this.candidates(), (p) => this.map.project(p)) ?? this.segmentSnap(e);
     return { position, snap };
+  }
+
+  /** Point le plus proche d'un tronçon sous le pointeur, à défaut de nœud ou de gare. */
+  private segmentSnap(e: MapMouseEvent): SnapTarget | null {
+    const r = SNAP_RADIUS_PX / 2;
+    const hits = this.map.queryRenderedFeatures(
+      [
+        [e.point.x - r, e.point.y - r],
+        [e.point.x + r, e.point.y + r],
+      ],
+      { layers: ['editor-segments'] },
+    );
+    const position: Position = [e.lngLat.lng, e.lngLat.lat];
+    let best: SnapTarget | null = null;
+    let bestDistance = Infinity;
+    for (const hit of hits) {
+      const segment = this.store.network.segments[hit.properties.id as Id];
+      if (!segment) continue;
+      const projection = projectOnPath(segmentPath(this.store.network, segment), position);
+      if (projection.distance < bestDistance) {
+        bestDistance = projection.distance;
+        best = { kind: 'segment', id: segment.id, position: projection.point, label: '' };
+      }
+    }
+    return best;
   }
 
   private onClick(e: MapMouseEvent): void {

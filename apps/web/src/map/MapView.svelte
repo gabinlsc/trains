@@ -18,6 +18,7 @@
   import { EditorController } from '../editor/controller.ts';
   import type { SnapTarget } from '../editor/snap.ts';
   import { EditorStore } from '../editor/store.svelte.ts';
+  import Inspector from '../editor/Inspector.svelte';
   import ProfileDrawer from '../editor/ProfileDrawer.svelte';
   import Toolbar from '../editor/Toolbar.svelte';
   import { loadDataFile, type Table } from './layers/data.ts';
@@ -186,6 +187,7 @@
   {#if !webglError}
     <LayersPanel manager={overlays} />
     <Toolbar store={editor} />
+    <Inspector store={editor} />
     <ProfileDrawer store={editor} />
   {/if}
   {#if basemapError}

@@ -1,9 +1,13 @@
 import type { Id, Position } from '@trains/shared';
 
-/** Cible d'aimantation : un nœud du réseau ou une gare réelle à reprendre. */
+/**
+ * Cible d'aimantation : un nœud du réseau, une gare réelle à reprendre, ou
+ * un point d'un tronçon existant (y aboutir crée une bifurcation).
+ */
 export type SnapTarget =
   | { kind: 'node'; id: Id; position: Position; label: string }
-  | { kind: 'station'; uic: string; position: Position; label: string };
+  | { kind: 'station'; uic: string; position: Position; label: string }
+  | { kind: 'segment'; id: Id; position: Position; label: string };
 
 export interface ScreenPoint {
   x: number;

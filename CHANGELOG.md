@@ -23,6 +23,11 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Profil en long du tronçon sélectionné, en tiroir bas : terrain, ligne rouge
   respectant la rampe maximale de la vitesse, tunnels et viaducs proposés
   automatiquement, rampes et longueurs d'ouvrages chiffrées.
+- Bifurcations et raccordements : un tracé qui aboutit sur un tronçon le
+  scinde et s'y raccorde.
+- Inspecteur de la sélection : nom, gare (type, quais, terminus),
+  saut-de-mouton, voies, vitesse, électrification, signalisation et
+  écartement d'un tronçon ; gares dessinées selon leur importance.
 - API `POST /api/elevation/profile` : altitude le long d'un tracé, la grille
   restant sur le serveur.
 
