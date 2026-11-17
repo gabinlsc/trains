@@ -120,14 +120,18 @@ in_box 'curl -fsS http://127.0.0.1:3070/api/health' | grep -q '"data":{"status":
 
 echo "▶ Vhost HTTPS une fois le certificat présent"
 # Certificat autosigné à l'emplacement de Let's Encrypt : le rendu HTTPS doit
-# passer « nginx -t » avec la version de Nginx d'Ubuntu 24.04.
+# passer « nginx -t » avec la version de Nginx d'Ubuntu 24.04. Il est ajouté
+# aux autorités du conteneur pour que le contrôle de santé HTTPS l'accepte.
 in_box 'install -d /etc/letsencrypt/live/trains.glsc.fr &&
   openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj /CN=trains.glsc.fr \
+    -addext subjectAltName=DNS:trains.glsc.fr \
     -keyout /etc/letsencrypt/live/trains.glsc.fr/privkey.pem \
-    -out /etc/letsencrypt/live/trains.glsc.fr/fullchain.pem 2>/dev/null'
+    -out /etc/letsencrypt/live/trains.glsc.fr/fullchain.pem 2>/dev/null &&
+  cp /etc/letsencrypt/live/trains.glsc.fr/fullchain.pem /usr/local/share/ca-certificates/trains-test.crt &&
+  update-ca-certificates >/dev/null 2>&1'
 deploy
 in_box 'grep -q "listen 443 ssl" /etc/nginx/sites-available/trains.glsc.fr' || fail "vhost HTTPS absent"
-in_box 'curl -fsSk --resolve trains.glsc.fr:443:127.0.0.1 https://trains.glsc.fr/api/health' |
+in_box 'curl -fsS --resolve trains.glsc.fr:443:127.0.0.1 https://trains.glsc.fr/api/health' |
   grep -q '"status"' || fail "HTTPS ne répond pas"
 [[ "$(in_box 'curl -s -o /dev/null -w "%{http_code}" -H "Host: trains.glsc.fr" http://127.0.0.1/')" == 301 ]] ||
   fail "HTTP ne redirige pas vers HTTPS"
