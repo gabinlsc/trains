@@ -95,6 +95,11 @@ grep -qi "^content-security-policy: default-src 'self'" <<<"$headers" || fail "C
 in_box 'curl -fsS -H "Host: trains.glsc.fr" http://127.0.0.1/une/route/spa' | grep -q '<div id="app">' ||
   fail "fallback SPA absent"
 in_box 'nginx -t 2>/dev/null' || fail "configuration Nginx invalide"
+worker="$(in_box 'ls /opt/trains/current/apps/web/dist/assets/ | grep -m1 "\.mjs$"' || true)"
+if [[ -n "$worker" ]]; then
+  in_box "curl -fsSI -H 'Host: trains.glsc.fr' http://127.0.0.1/assets/${worker}" |
+    grep -qi '^content-type: text/javascript' || fail "worker .mjs servi avec un mauvais type MIME"
+fi
 deploy --status >/dev/null || fail "--status en échec"
 
 echo "▶ Données publiées"

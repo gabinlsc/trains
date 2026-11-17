@@ -275,3 +275,27 @@ identiques octet pour octet). Une extraction interrompue repart de zéro
 ce qui suffit en pratique. Les glyphes et sprites ne peuvent pas être
 épinglés sur un commit (pas d'étiquette publiée) : leur empreinte est
 consignée et revérifiée à chaque passage.
+
+## ADR-017 — Carte MapLibre chargée à la demande, style sur mesure
+
+**Contexte.** Le bundle initial doit rester sous 300 kB compressés ;
+MapLibre GL JS en pèse à lui seul environ 280. Le fond de carte, ses glyphes
+et ses sprites sont auto-hébergés, et la CSP interdit les scripts en ligne.
+
+**Décision.** Routeur minimal (API History) : la page de carte est un module
+chargé à la demande (`import()`), l'accueil ne charge ni MapLibre ni le
+style. Le style est construit en code à partir des couches Protomaps
+(`@protomaps/basemaps`), avec deux palettes propres : tons papier en clair,
+nuit bleutée en sombre, routes et occupation du sol volontairement discrètes
+pour que les lignes du joueur dominent. Le worker de MapLibre 6 est émis
+comme fichier `.mjs` distinct (`setWorkerUrl`) : même origine, compatible
+avec `worker-src 'self'`. Les attributions sont portées par le contrôle
+d'attribution, donc visibles même si une source échoue. Le déplacement est
+borné à l'emprise des données avec une marge (4° en longitude, 1° en
+latitude) : un cadrage strict couperait le nord ou la Corse sur un écran
+large ; la marge montre le fond uni, lu comme « hors zone ».
+
+**Conséquences.** Accueil à 19 kB compressés ; carte à 330 kB, téléchargée
+une fois puis mise en cache (fichiers fingerprintés). Nginx doit servir
+`.mjs` comme JavaScript (types déclarés dans `/assets/`, contrôlé par le test
+de déploiement).

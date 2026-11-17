@@ -29,6 +29,19 @@ server {
     # Assets fingerprintés par Vite : cache permanent.
     location /assets/ {
         try_files $uri =404;
+        # Liste complète : « types » remplace la table globale dans ce bloc.
+        # Le worker de MapLibre est un module .mjs, refusé par le navigateur
+        # s'il n'est pas servi comme JavaScript.
+        types {
+            text/javascript js mjs;
+            text/css css;
+            application/json json map;
+            image/svg+xml svg;
+            image/png png;
+            image/webp webp;
+            image/jpeg jpg jpeg;
+            font/woff2 woff2;
+        }
         add_header Cache-Control "public, max-age=31536000, immutable" always;
 @SECURITY_HEADERS@
     }

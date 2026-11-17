@@ -28,7 +28,29 @@ export const fr = {
         text: 'Coûts, temps de parcours, fréquentation, rentabilité et CO₂ évité.',
       },
     },
+    openMap: 'Ouvrir la carte',
     diagramLabel: 'Schéma de la ligne A, de Brest à Strasbourg, desservant cinq gares',
+  },
+  nav: {
+    home: 'Accueil',
+    map: 'Carte',
+  },
+  theme: {
+    toLight: 'Passer au thème clair',
+    toDark: 'Passer au thème sombre',
+  },
+  map: {
+    title: 'Carte',
+    label: 'Carte de la France',
+    loading: 'Chargement de la carte…',
+    basemapUnavailable:
+      'Fond de carte indisponible pour le moment : les données ferroviaires restent consultables.',
+    webglUnavailable: 'Votre navigateur ne permet pas d’afficher la carte (WebGL indisponible).',
+  },
+  notFound: {
+    title: 'Page introuvable',
+    text: 'Cette adresse ne correspond à aucune page.',
+    back: 'Retour à l’accueil',
   },
   footer: {
     attribution: 'Données : © contributeurs OpenStreetMap, INSEE, SNCF, IGN.',

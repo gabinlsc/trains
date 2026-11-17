@@ -10,12 +10,21 @@
     "preview": "vite preview",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "sirv": "^3.0.2",
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
     "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "@protomaps/basemaps": "^5.7.2",
+    "@trains/shared": "workspace:*",
+    "maplibre-gl": "^6.18.0",
+    "pmtiles": "^4.5.0"
   }
 }
