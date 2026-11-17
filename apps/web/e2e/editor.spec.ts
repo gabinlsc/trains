@@ -91,3 +91,47 @@ test('le profil en long s’ouvre sur le tronçon sélectionné, ou explique son
   await page.getByRole('button', { name: 'Masquer le profil en long' }).click();
   await expect(drawer.getByText('Profil indisponible')).toBeHidden();
 });
+
+test('l’inspecteur modifie le tronçon sélectionné', async ({ page }) => {
+  await openMap(page);
+  await drawLine(page);
+  const inspector = page.getByRole('complementary', { name: 'Inspecteur' });
+  await expect(inspector.getByRole('heading', { name: 'Tronçon' })).toBeVisible();
+  await inspector.getByLabel('Voies').selectOption({ label: 'Voie unique' });
+  await expect(page.getByRole('button', { name: 'Annuler (Ctrl+Z)' })).toHaveAttribute(
+    'title',
+    'Annuler : Modifier le tronçon',
+  );
+});
+
+test('aboutir sur un tronçon crée une bifurcation, qui peut devenir une gare', async ({ page }) => {
+  await openMap(page);
+  await drawLine(page);
+  const box = await page.locator('canvas.maplibregl-canvas').boundingBox();
+  if (!box) throw new Error('carte absente');
+  const at = (fx: number, fy: number): [number, number] => [
+    box.x + box.width * fx,
+    box.y + box.height * fy,
+  ];
+  // Milieu du premier alignement, puis un point au sud.
+  await page.mouse.click(...at(0.525, 0.425));
+  await page.mouse.click(...at(0.5, 0.7));
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('v');
+  const inspector = page.getByRole('complementary', { name: 'Inspecteur' });
+  // Le nœud n'est cliquable qu'une fois la carte redessinée : on réessaie.
+  await expect(async () => {
+    await page.mouse.click(...at(0.525, 0.425));
+    await expect(inspector.getByRole('heading', { name: 'Bifurcation' })).toBeVisible({
+      timeout: 500,
+    });
+  }).toPass();
+  await expect(inspector.getByText('3 tronçon(s) raccordé(s)')).toBeVisible();
+  await inspector.getByLabel('Saut-de-mouton (croisement dénivelé)').check();
+  await inspector.getByLabel('Gare voyageurs').check();
+  await expect(inspector.getByRole('heading', { name: 'Gare' })).toBeVisible();
+  await inspector.getByLabel('Type').selectOption({ label: 'Gare TGV' });
+  await expect(inspector.getByLabel('Quais')).toHaveValue('6');
+  await inspector.getByLabel('Nom').fill('Bifurcation Nord');
+  await expect(inspector.getByLabel('Nom')).toHaveValue('Bifurcation Nord');
+});

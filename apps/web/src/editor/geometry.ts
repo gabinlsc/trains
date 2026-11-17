@@ -18,7 +18,11 @@ export interface NetworkGeoJSON {
     LineString,
     { id: string; speed: number; tracks: number; issues: number }
   >;
-  nodes: FeatureCollection<Point, { id: string; kind: string; name: string }>;
+  nodes: FeatureCollection<
+    Point,
+    /** station : type de gare, vide pour un autre nœud. */
+    { id: string; kind: string; name: string; station: string; flyover: boolean }
+  >;
   /** Sommets où le rayon exigé n'est pas tenu (alignements trop courts, angles vifs). */
   issues: FeatureCollection<Point, { segment: string; radius: number; required: number }>;
 }
@@ -55,7 +59,13 @@ export function networkToGeoJSON(network: Network): NetworkGeoJSON {
   const nodes: NetworkGeoJSON['nodes']['features'] = Object.values(network.nodes).map((node) => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [node.position[0], node.position[1]] },
-    properties: { id: node.id, kind: node.kind, name: node.name ?? '' },
+    properties: {
+      id: node.id,
+      kind: node.kind,
+      name: node.name ?? '',
+      station: node.station?.type ?? '',
+      flyover: node.flyover ?? false,
+    },
   }));
   return {
     segments: { type: 'FeatureCollection', features: segments },

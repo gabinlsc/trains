@@ -2,7 +2,7 @@ import { addNode, addSegment, EMPTY_NETWORK, type Network, type Position } from 
 import { describe, expect, it } from 'vitest';
 import { networkToGeoJSON, previewPath } from './geometry.ts';
 import { findSnap, type SnapTarget } from './snap.ts';
-import { EditorStore } from './store.svelte.ts';
+import { DEFAULT_PLATFORMS, EditorStore } from './store.svelte.ts';
 
 const A: Position = [2.2, 47.0];
 const B: Position = [2.4, 47.0];
@@ -150,5 +150,58 @@ describe('état de l’éditeur', () => {
     store.setTool('draw');
     expect(store.tool).toBe('draw');
     expect(store.error).toBeNull();
+  });
+
+  it('trace une bifurcation en aboutissant sur un tronçon existant', () => {
+    const store = new EditorStore(network());
+    const id = store.finishDraw([
+      {
+        position: [2.3, 47.0],
+        snap: { kind: 'segment', id: 's_ssssss', position: [2.3, 47.0], label: '' },
+      },
+      { position: [2.3, 46.9] },
+    ]);
+    const branch = store.network.segments[id ?? ''];
+    const junction = store.network.nodes[branch?.from ?? ''];
+    expect(junction?.kind).toBe('junction');
+    expect(junction?.position).toEqual([2.3, 47.0]);
+    expect(store.network.segments.s_ssssss).toBeUndefined();
+    expect(Object.keys(store.network.segments)).toHaveLength(3);
+    store.undo();
+    expect(Object.keys(store.network.segments)).toEqual(['s_ssssss']);
+  });
+
+  it('fait d’un nœud une gare, la modifie puis la retire', () => {
+    const store = new EditorStore(network());
+    store.setStation('n_aaaaaa', { type: 'tgv', platforms: DEFAULT_PLATFORMS.tgv, terminus: true });
+    expect(store.network.nodes.n_aaaaaa).toMatchObject({
+      kind: 'station',
+      station: { type: 'tgv', platforms: 6, terminus: true },
+    });
+    store.setStation('n_aaaaaa', null);
+    expect(store.network.nodes.n_aaaaaa?.kind).toBe('waypoint');
+    expect(store.network.nodes.n_aaaaaa?.station).toBeUndefined();
+    expect(store.undoLabel).toBe('Retirer la gare');
+  });
+
+  it('renomme en une seule étape d’historique et retire un nom vide', () => {
+    const store = new EditorStore(network());
+    for (const name of ['B', 'Bo', 'Bourges']) store.renameNode('n_aaaaaa', name);
+    store.seal();
+    expect(store.network.nodes.n_aaaaaa?.name).toBe('Bourges');
+    store.renameNode('n_aaaaaa', '  ');
+    expect(store.network.nodes.n_aaaaaa?.name).toBeUndefined();
+    store.undo();
+    store.undo();
+    expect(store.network.nodes.n_aaaaaa?.name).toBeUndefined();
+    expect(store.canUndo).toBe(false);
+  });
+
+  it('modifie les caractéristiques d’un tronçon et le saut-de-mouton', () => {
+    const store = new EditorStore(network());
+    store.updateSpec('s_ssssss', { tracks: 4, designSpeedKmh: 220 });
+    expect(store.network.segments.s_ssssss?.spec).toMatchObject({ tracks: 4, designSpeedKmh: 220 });
+    store.setFlyover('n_aaaaaa', true);
+    expect(store.network.nodes.n_aaaaaa?.flyover).toBe(true);
   });
 });

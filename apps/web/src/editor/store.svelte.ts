@@ -4,19 +4,32 @@ import {
   DEFAULT_TRACK_SPEC,
   EMPTY_NETWORK,
   History,
+  insertNodeOnSegment,
   moveNode,
   NetworkError,
   removeNode,
   removeSegment,
+  updateNode,
+  updateSegment,
   type Id,
   type Network,
   type Position,
+  type Station,
+  type StationType,
   type TrackSpec,
 } from '@trains/shared';
 import { SvelteSet } from 'svelte/reactivity';
 import type { SnapTarget } from './snap.ts';
 
 export type Tool = 'select' | 'draw';
+
+/** Nombre de quais proposé à la création d'une gare, selon son type. */
+export const DEFAULT_PLATFORMS: Readonly<Record<StationType, number>> = {
+  halte: 1,
+  gare: 2,
+  correspondance: 4,
+  tgv: 6,
+};
 
 /** Point saisi pendant le tracé, éventuellement aimanté. */
 export interface DraftPoint {
@@ -137,6 +150,12 @@ export class EditorStore {
       const endpoint = (point: DraftPoint): Id => {
         const snap = point.snap;
         if (snap?.kind === 'node' && next.nodes[snap.id]) return snap.id;
+        // Sur un tronçon : il est scindé et le nœud créé deviendra bifurcation.
+        if (snap?.kind === 'segment' && next.segments[snap.id]) {
+          const inserted = insertNodeOnSegment(next, snap.id, snap.position);
+          next = inserted.network;
+          return inserted.node.id;
+        }
         const added =
           snap?.kind === 'station'
             ? addNode(next, snap.position, {
@@ -159,5 +178,48 @@ export class EditorStore {
       this.selection.add(created.id);
     }
     return created.id;
+  }
+
+  /** Renomme un nœud ; la saisie au clavier forme une seule étape d'historique. */
+  renameNode(id: Id, name: string): void {
+    const trimmed = name.trim();
+    this.execute(
+      'Renommer',
+      (network) => {
+        const node = network.nodes[id];
+        if (!node) return network;
+        if (trimmed) return updateNode(network, id, { name: trimmed.slice(0, 80) });
+        const { name: _removed, ...rest } = node;
+        return { ...network, nodes: { ...network.nodes, [id]: rest } };
+      },
+      `rename:${id}`,
+    );
+  }
+
+  /** Fait d'un nœud une gare, ou lui retire ce rôle (null). */
+  setStation(id: Id, station: Station | null): void {
+    this.execute(station ? 'Modifier la gare' : 'Retirer la gare', (network) =>
+      updateNode(network, id, { station: station ?? undefined }),
+    );
+  }
+
+  setFlyover(id: Id, flyover: boolean): void {
+    this.execute(flyover ? 'Saut-de-mouton' : 'Croisement à niveau', (network) =>
+      updateNode(network, id, { flyover }),
+    );
+  }
+
+  /** Modifie les caractéristiques d'un tronçon. */
+  updateSpec(id: Id, patch: Partial<TrackSpec>): void {
+    this.execute('Modifier le tronçon', (network) => {
+      const segment = network.segments[id];
+      if (!segment) return network;
+      return updateSegment(network, id, { spec: { ...segment.spec, ...patch } });
+    });
+  }
+
+  /** Termine une saisie fusionnée (nom tapé au clavier). */
+  seal(): void {
+    this.history.seal();
   }
 }

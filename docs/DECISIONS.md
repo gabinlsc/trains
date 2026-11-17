@@ -405,3 +405,21 @@ pour un tronçon de 100 km. La ligne rouge suit le terrain partout où il est
 conforme. En montagne, elle épouse encore le relief (succession d'ouvrages
 courts) plutôt que de plonger dans un tunnel de base : le coût réel des
 ouvrages, introduit avec le modèle économique, permettra d'arbitrer.
+
+## ADR-023 — Bifurcations par scission du tronçon, inspecteur unique
+
+**Contexte.** Le joueur doit créer gares, bifurcations et raccordements sans
+outil dédié à chaque cas, et régler ensuite leurs caractéristiques.
+
+**Décision.** Un tracé qui aboutit sur un tronçon existant (aimantation au
+point le plus proche, après les nœuds et les gares réelles) scinde ce
+tronçon et y pose un nœud : avec trois tronçons, il devient bifurcation
+(nature déduite, ADR-020). Une extrémité ou un sommet à moins de 5 m est
+réutilisé plutôt que de créer un tronçon minuscule. Un panneau
+d'inspection unique, selon la sélection, édite le nom, le rôle de gare
+(type, quais, terminus), le saut-de-mouton d'une bifurcation et les
+caractéristiques d'un tronçon. Chaque modification est une commande
+d'historique ; la frappe d'un nom n'en forme qu'une.
+
+**Conséquences.** Un raccordement se trace comme une voie ordinaire. Le
+nombre de quais proposé suit le type de gare (1 à 6) mais reste libre.
