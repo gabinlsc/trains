@@ -87,6 +87,9 @@ importers:
       '@protomaps/basemaps':
         specifier: ^5.7.2
         version: 5.7.2
+      '@trains/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@trains/shared':
         specifier: workspace:*
         version: link:../../packages/shared
