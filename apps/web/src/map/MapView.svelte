@@ -18,6 +18,7 @@
   import { EditorController } from '../editor/controller.ts';
   import type { SnapTarget } from '../editor/snap.ts';
   import { EditorStore } from '../editor/store.svelte.ts';
+  import Dashboard from '../demand/Dashboard.svelte';
   import { DemandModel } from '../demand/model.svelte.ts';
   import Inspector from '../editor/Inspector.svelte';
   import LinesPanel from '../editor/LinesPanel.svelte';
@@ -41,6 +42,7 @@
   const overlays = new OverlayManager();
   const editor = new EditorStore();
   const demand = new DemandModel();
+  let heat = $state<boolean>(false);
   const persistence = new GamePersistence(
     editor,
     typeof indexedDB === 'undefined' ? null : new GameStorage(indexedDB),
@@ -92,6 +94,8 @@
       editor.setTool('select');
     } else if (key === 't') {
       editor.setTool('draw');
+    } else if (key === 'b') {
+      editor.dashboard = !editor.dashboard;
     } else if (key === 'l') {
       controller?.cancel();
       editor.setTool('line');
@@ -194,6 +198,22 @@
     controller?.renderLineDraft(editor.lineDraft);
   });
 
+  // Carte de chaleur : montées par gare, rapportées à la gare la plus chargée.
+  $effect(() => {
+    const result = demand.result;
+    if (!heat || !result) {
+      controller?.setHeat(null);
+      return;
+    }
+    const max = Math.max(1, ...Object.values(result.boardings));
+    controller?.setHeat(
+      Object.entries(result.boardings).flatMap(([id, value]) => {
+        const node = editor.network.nodes[id];
+        return node ? [{ position: node.position, weight: value / max }] : [];
+      }),
+    );
+  });
+
   // La demande suit chaque modification du réseau (calcul différé, en worker).
   $effect(() => {
     demand.update(editor.network);
@@ -232,6 +252,9 @@
     <Inspector store={editor} {demand} />
     <LinesPanel store={editor} {demand} />
     <GamePanel store={editor} {persistence} />
+    {#if editor.dashboard}
+      <Dashboard store={editor} {demand} bind:heat />
+    {/if}
     <ProfileDrawer store={editor} />
   {/if}
   {#if basemapError}

@@ -112,4 +112,22 @@ describe('demande et affectation', () => {
     expect(result.boardings.nantes).toBeUndefined();
     expect(result.lines.a?.peakLoadFactor).toBeGreaterThan(0);
   });
+
+  it('donne la matrice des temps entre les plus grandes gares', () => {
+    const result = computeDemand(ZONES, STATIONS, [
+      line('a', ['paris', 'dijon'], 0.3, 60),
+      line('b', ['dijon', 'lyon'], 0.3, 60),
+    ]);
+    const { stations, minutes } = result.matrix;
+    expect(stations[0]).toBe('paris');
+    const paris = stations.indexOf('paris');
+    const lyon = stations.indexOf('lyon');
+    const dijon = stations.indexOf('dijon');
+    expect(minutes[paris]?.[paris]).toBe(0);
+    // Deux attentes de 30 min et les deux trajets.
+    const direct = (minutes[paris]?.[dijon] ?? 0) + (minutes[dijon]?.[lyon] ?? 0);
+    expect(minutes[paris]?.[lyon]).toBeCloseTo(direct);
+    expect(minutes[lyon]?.[paris]).toBeCloseTo(minutes[paris]?.[lyon] ?? 0);
+    expect(stations).not.toContain('nantes');
+  });
 });

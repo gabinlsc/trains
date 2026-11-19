@@ -70,6 +70,8 @@ export class EditorStore {
   error = $state<string | null>(null);
   /** Gares cliquées pour la ligne en cours de création. */
   lineDraft = $state<Id[]>([]);
+  /** Tableau de bord ouvert. */
+  dashboard = $state(false);
   /** Ligne ouverte dans le panneau des lignes. */
   activeLine = $state<Id | null>(null);
   canUndo = $state(false);

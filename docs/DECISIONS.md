@@ -544,3 +544,19 @@ calées sur un ordre de grandeur réel et décrits dans
 s'affichent par ligne, le bassin et les montées par gare. Sans les données
 des communes, la demande est déclarée indisponible et l'éditeur reste
 entièrement utilisable.
+
+## ADR-030 — Tableau de bord dérivé, sans état propre
+
+**Contexte.** Le joueur a besoin d'une vue d'ensemble : ce que coûte son
+réseau, ce qu'il rapporte, qui l'utilise et ce qu'il évite comme émissions.
+
+**Décision.** Les indicateurs sont une fonction pure du réseau et du
+dernier résultat de demande (`networkKpis`) ; le tableau de bord ne stocke
+rien et se recalcule avec eux. Les indicateurs qui dépendent de la demande
+s'affichent « — » tant qu'elle n'est pas calculée. La matrice des temps est
+produite par le modèle de demande, sur les mêmes chemins que l'affectation.
+La carte de chaleur pondère chaque gare par ses montées, en une seule
+teinte.
+
+**Conséquences.** Aucune incohérence possible entre le tableau de bord et
+les panneaux : tous lisent les mêmes calculs.

@@ -19,6 +19,7 @@ const SRC = {
   draft: 'editor-draft',
   lines: 'editor-lines',
   lineDraft: 'editor-line-draft',
+  heat: 'editor-heat',
 } as const;
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
@@ -30,6 +31,31 @@ function layers(theme: Theme): LayerSpecification[] {
   const paper = theme === 'dark' ? '#151a21' : '#ffffff';
   const accent = PLAYER[theme];
   return [
+    {
+      // Montées en gare : une seule teinte, de transparente à soutenue.
+      id: 'editor-heat',
+      type: 'heatmap',
+      source: SRC.heat,
+      paint: {
+        'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 18, 10, 60],
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 5, 1, 10, 2],
+        'heatmap-opacity': 0.75,
+        'heatmap-color': [
+          'interpolate',
+          ['linear'],
+          ['heatmap-density'],
+          0,
+          'rgba(0,0,0,0)',
+          0.2,
+          `${accent}33`,
+          0.6,
+          `${accent}99`,
+          1,
+          accent,
+        ],
+      },
+    },
     {
       id: 'editor-segments-casing',
       type: 'line',
@@ -267,6 +293,22 @@ export class EditorController {
     this.map.setFilter('editor-segments-selected', selected as never);
     this.map.setFilter('editor-nodes-selected', selected as never);
     this.renderDraft();
+  }
+
+  /** Carte de chaleur des montées ; null l'efface. */
+  setHeat(points: readonly { position: Position; weight: number }[] | null): void {
+    void this.map.getSource<GeoJSONSource>(SRC.heat)?.setData(
+      points
+        ? {
+            type: 'FeatureCollection',
+            features: points.map((p) => ({
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [p.position[0], p.position[1]] },
+              properties: { weight: p.weight },
+            })),
+          }
+        : EMPTY,
+    );
   }
 
   /** Gares déjà cliquées pour la ligne en cours, reliées à vol d'oiseau. */

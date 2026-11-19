@@ -130,7 +130,10 @@ interface Ride {
   to: number;
   /** Arrêt de destination. */
   target: string;
+  /** Coût généralisé (min) : attente, trajet et prix converti. */
   minutes: number;
+  /** Temps réel (min) : attente et trajet. */
+  timeMin: number;
   fareEur: number;
 }
 
@@ -195,6 +198,11 @@ export interface DemandResult {
   /** Montées par jour à chaque gare. */
   boardings: Record<string, number>;
   catchments: Record<string, Catchment>;
+  /**
+   * Temps de trajet en train (min, attente comprise, hors accès) entre les
+   * gares au plus grand bassin ; null quand elles ne sont pas reliées.
+   */
+  matrix: { stations: string[]; minutes: (number | null)[][] };
   /** Principales relations (deux sens réunis), par trafic décroissant. */
   topPairs: { from: string; to: string; tripsPerDay: number; railShare: number }[];
 }
@@ -202,6 +210,8 @@ export interface DemandResult {
 const DAYS_PER_YEAR = 365;
 /** Relations conservées dans le résultat. */
 const TOP_PAIRS = 20;
+/** Gares retenues dans la matrice des temps. */
+export const MATRIX_SIZE = 10;
 
 /** Part du train entre deux coûts généralisés (min). */
 export function railShare(railMin: number, carMin: number): number {
@@ -250,6 +260,7 @@ export function computeDemand(
         to: b,
         target: line.stops[b] as string,
         minutes: wait + seconds / 60 + (fareEur * 60) / VALUE_OF_TIME_EUR_H,
+        timeMin: wait + seconds / 60,
         fareEur,
       };
       const list = ridesFrom.get(from) ?? [];
@@ -337,6 +348,24 @@ export function computeDemand(
     })
     .sort((a, b) => b.tripsPerDay - a.tripsPerDay)
     .slice(0, TOP_PAIRS);
+  const matrixIds = [...ids]
+    .sort((a, b) => (area.get(b)?.population ?? 0) - (area.get(a)?.population ?? 0))
+    .slice(0, MATRIX_SIZE);
+  const minutes = matrixIds.map((origin) => {
+    const paths = shortestRides(origin, ridesFrom);
+    return matrixIds.map((destination) => {
+      if (destination === origin) return 0;
+      if (!paths.cost.has(destination)) return null;
+      let total = 0;
+      for (let at = destination; at !== origin;) {
+        const back = paths.prev.get(at);
+        if (!back) return null;
+        total += back.ride.timeMin;
+        at = back.station;
+      }
+      return total;
+    });
+  });
   const result: DemandResult = {
     railTripsPerDay: railTrips,
     marketTripsPerDay: market,
@@ -344,6 +373,7 @@ export function computeDemand(
     boardings,
     catchments: Object.fromEntries(area),
     topPairs,
+    matrix: { stations: matrixIds, minutes },
   };
   lines.forEach((line, index) => {
     const load = loads[index] as (typeof loads)[number];
