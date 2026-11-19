@@ -55,6 +55,17 @@
       /><circle cx="19" cy="18" r="2.2" /><path d="M6 10h12M14 6l4 4-4 4" /></svg
     >
   </button>
+  <button
+    type="button"
+    aria-pressed={store.dashboard}
+    title={t('dashboard.open')}
+    aria-label={t('dashboard.open')}
+    onclick={() => {
+      store.dashboard = !store.dashboard;
+    }}
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+  </button>
   <hr />
   <button
     type="button"

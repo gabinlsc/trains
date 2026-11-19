@@ -29,6 +29,9 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   marché gravitaire, partage modal face à la voiture, affectation sur les
   lignes ; fréquentation, recettes et remplissage par ligne, bassin et
   montées par gare.
+- Tableau de bord (touche B) : infrastructure, exploitation, fréquentation,
+  solde annuel et CO₂ évité, matrice des temps de trajet entre les
+  principales gares, carte de chaleur des montées.
 
 ### Corrigé
 

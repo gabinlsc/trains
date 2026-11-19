@@ -167,6 +167,31 @@ Limites : pas de demande induite (le marché tous modes ne dépend pas de
 l'offre), pas de concurrence de l'avion ni du réseau ferré existant, et pas
 de pointe horaire : le remplissage se mesure sur la journée.
 
+## Bilan carbone
+
+Les émissions évitées comptent le report de la voiture vers le train :
+voyageurs-kilomètres annuels de chaque ligne multipliés par l'écart entre
+les facteurs d'émission (kg CO₂e par voyageur-km, ordres de grandeur de la
+Base Empreinte de l'ADEME) :
+
+| Mode                   | kg CO₂e / voy.-km |
+| ---------------------- | ----------------- |
+| Voiture (1,6 occupant) | 0,13              |
+| Train électrique       | 0,005             |
+| Train bimode           | 0,04              |
+| Train thermique        | 0,08              |
+
+La construction des infrastructures n'est pas encore comptée.
+
+## Tableau de bord
+
+Le tableau de bord (touche B) réunit : longueur de voies, gares,
+investissement (hors ouvrages d'art), entretien annuel ; lignes, rames,
+prix du parc, exploitation annuelle ; voyages quotidiens, voyageurs-km,
+recettes, solde d'exploitation (recettes moins exploitation et entretien) et
+CO₂ évité. Il affiche aussi la matrice des temps de trajet entre les dix
+gares au plus grand bassin et une carte de chaleur des montées.
+
 ## Dans l'interface
 
 - L'inspecteur affiche le coût d'une gare, d'une bifurcation, et celui d'un

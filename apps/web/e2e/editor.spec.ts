@@ -193,3 +193,16 @@ test('créer une ligne commerciale entre deux gares et choisir son matériel', a
   await settings.getByRole('button', { name: 'Supprimer la ligne' }).click();
   await expect(panel.getByText('Aucune ligne')).toHaveCount(0);
 });
+
+test('le tableau de bord s’ouvre au clavier et présente les indicateurs', async ({ page }) => {
+  await openMap(page);
+  await drawLine(page);
+  await page.keyboard.press('b');
+  const dashboard = page.getByRole('region', { name: 'Tableau de bord' });
+  await expect(dashboard.getByRole('heading', { name: 'Infrastructure' })).toBeVisible();
+  await expect(dashboard).toContainText(/Voies\s*[\d,]+ km/);
+  await expect(dashboard).toContainText('Investissement');
+  await dashboard.getByLabel('Carte de chaleur des montées en gare').check();
+  await dashboard.getByRole('button', { name: 'Fermer le tableau de bord' }).click();
+  await expect(dashboard).toHaveCount(0);
+});
