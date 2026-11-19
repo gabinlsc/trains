@@ -125,6 +125,8 @@ export const fr = {
     gauge: 'Écartement',
     curves: 'Courbes trop serrées : {count}',
     multiple: '{count} éléments sélectionnés',
+    cost: 'Coût estimé : {amount}',
+    costPlain: 'Coût estimé hors ouvrages d’art : {amount}',
   },
   stationTypes: {
     halte: 'Halte',
@@ -155,6 +157,7 @@ export const fr = {
     length: 'Longueur : {km} km',
     grade: 'Rampe maximale de la voie : {track} ‰ (limite {limit} ‰), du terrain : {terrain} ‰',
     structures: 'Tunnels : {tunnels} km · Viaducs : {viaducts} km',
+    cost: 'Coût estimé avec ouvrages et terrassements : {amount} ({perKm} par km)',
   },
   notFound: {
     title: 'Page introuvable',

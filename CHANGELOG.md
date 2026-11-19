@@ -7,6 +7,14 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Modèle de coûts : voie selon la vitesse et le nombre de voies,
+  terrassements, tunnels et viaducs, électrification, signalisation, gares,
+  bifurcations, provision pour études et aléas, entretien annuel ; coûts
+  affichés dans l'inspecteur et le profil en long. Documenté dans
+  `docs/MODELE-ECONOMIQUE.md`.
+
 ### Corrigé
 
 - Déploiement : le vhost HTTPS échouait à « nginx -t » avec Nginx 1.24

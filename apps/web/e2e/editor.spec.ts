@@ -97,6 +97,9 @@ test('l’inspecteur modifie le tronçon sélectionné', async ({ page }) => {
   await drawLine(page);
   const inspector = page.getByRole('complementary', { name: 'Inspecteur' });
   await expect(inspector.getByRole('heading', { name: 'Tronçon' })).toBeVisible();
+  await expect(
+    inspector.getByText(/Coût estimé hors ouvrages d’art : [\d\s,]+ (M|Md)€/),
+  ).toBeVisible();
   await inspector.getByLabel('Voies').selectOption({ label: 'Voie unique' });
   await expect(page.getByRole('button', { name: 'Annuler (Ctrl+Z)' })).toHaveAttribute(
     'title',
@@ -132,6 +135,7 @@ test('aboutir sur un tronçon crée une bifurcation, qui peut devenir une gare',
   await expect(inspector.getByRole('heading', { name: 'Gare' })).toBeVisible();
   await inspector.getByLabel('Type').selectOption({ label: 'Gare TGV' });
   await expect(inspector.getByLabel('Quais')).toHaveValue('6');
+  await expect(inspector.getByText('Coût estimé : 70 M€')).toBeVisible();
   await inspector.getByLabel('Nom').fill('Bifurcation Nord');
   await expect(inspector.getByLabel('Nom')).toHaveValue('Bifurcation Nord');
 });

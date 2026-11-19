@@ -1,4 +1,5 @@
 import {
+  earthworkDepth,
   gradeLimits,
   gradeLine,
   maxGrade,
@@ -44,6 +45,8 @@ export interface ProfileAnalysis {
   viaductLength: number;
   minElevation: number;
   maxElevation: number;
+  /** Écart moyen voie/terrain hors ouvrages (m), pour les terrassements. */
+  earthworkDepth: number;
 }
 
 /**
@@ -76,5 +79,6 @@ export function analyseProfile(profile: TerrainProfile, speedKmh: number): Profi
     viaductLength: sum('viaduct'),
     minElevation: Math.min(...all),
     maxElevation: Math.max(...all),
+    earthworkDepth: earthworkDepth(terrain, track, structures, profile.distance),
   };
 }

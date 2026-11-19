@@ -443,3 +443,20 @@ seulement.
 **Conséquences.** Les migrations de format, écrites une fois, servent aussi
 bien aux fichiers échangés qu'aux parties conservées. Sans IndexedDB
 (navigation privée stricte), l'éditeur fonctionne et invite à exporter.
+
+## ADR-025 — Coûts paramétrés dans le moteur, documentés à part
+
+**Contexte.** Le jeu doit chiffrer un tracé de façon crédible et
+reproductible, et le joueur comprendre d'où vient le montant.
+
+**Décision.** Le moteur porte un modèle de coûts paramétré par postes
+(voie, terrassements, ouvrages, électrification, signalisation, gares,
+bifurcations), exprimé en M€ 2026, avec une provision de 15 % pour études
+et aléas et des taux d'entretien annuels par poste. Chaque paramètre est une
+constante exportée, et `docs/MODELE-ECONOMIQUE.md` en donne la table et la
+justification. Le coût d'un tronçon se calcule avec ou sans profil en long :
+sans lui, ouvrages et terrassements sont absents, et l'interface le dit.
+
+**Conséquences.** Les ordres de grandeur sont vérifiés par les tests (une
+LGV coûte 18 à 30 M€/km hors grands ouvrages). Ajuster un prix ne touche
+qu'une constante et sa ligne de documentation.
