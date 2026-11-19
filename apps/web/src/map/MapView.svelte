@@ -19,6 +19,7 @@
   import type { SnapTarget } from '../editor/snap.ts';
   import { EditorStore } from '../editor/store.svelte.ts';
   import Inspector from '../editor/Inspector.svelte';
+  import LinesPanel from '../editor/LinesPanel.svelte';
   import ProfileDrawer from '../editor/ProfileDrawer.svelte';
   import Toolbar from '../editor/Toolbar.svelte';
   import GamePanel from '../storage/GamePanel.svelte';
@@ -89,6 +90,16 @@
       editor.setTool('select');
     } else if (key === 't') {
       editor.setTool('draw');
+    } else if (key === 'l') {
+      controller?.cancel();
+      editor.setTool('line');
+    } else if (key === 'enter' && editor.tool === 'line') {
+      editor.finishLine();
+    } else if (key === 'escape' && editor.tool === 'line') {
+      editor.setTool('select');
+    } else if (key === 'backspace' && editor.tool === 'line' && editor.lineDraft.length > 0) {
+      event.preventDefault();
+      editor.removeLastStop();
     } else if (key === 'enter' && controller?.drafting) {
       controller.finish();
     } else if (key === 'escape') {
@@ -177,6 +188,10 @@
     controller?.render(editor.network, [...editor.selection]);
   });
 
+  $effect(() => {
+    controller?.renderLineDraft(editor.lineDraft);
+  });
+
   // Sauvegarde locale différée après chaque changement du réseau ou du nom.
   $effect(() => {
     persistence.changed(editor.network, editor.name);
@@ -207,6 +222,7 @@
     <LayersPanel manager={overlays} />
     <Toolbar store={editor} />
     <Inspector store={editor} />
+    <LinesPanel store={editor} />
     <GamePanel store={editor} {persistence} />
     <ProfileDrawer store={editor} />
   {/if}

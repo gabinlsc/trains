@@ -480,3 +480,23 @@ niveau 2.
 **Conséquences.** Le catalogue est consultable sur `/materiel`. Les
 paramètres dynamiques (puissance, masse, accélération) serviront aux
 marches types.
+
+## ADR-027 — Lignes commerciales dans le modèle de réseau
+
+**Contexte.** Une ligne commerciale dessert des gares de l'infrastructure ;
+ses arrêts doivent suivre les suppressions et l'annulation doit couvrir
+aussi bien les voies que les dessertes.
+
+**Décision.** Les lignes sont un troisième dictionnaire du réseau, à côté
+des nœuds et des tronçons, validé par le même schéma. Une ligne est une
+suite de gares, un matériel du catalogue, une cadence et une amplitude
+horaire ; elle circule dans les deux sens. Son itinéraire n'est pas
+stocké : le moteur le recalcule (plus court chemin entre arrêts
+consécutifs), ce qui le garde juste quand le réseau change. Supprimer ou
+déclasser une gare la retire des lignes ; une ligne réduite à une gare
+disparaît. Le champ est facultatif à la lecture : les sauvegardes
+antérieures restent valides sans migration.
+
+**Conséquences.** Toute opération sur les lignes passe par l'historique.
+Un intervalle non relié ou un matériel incompatible est signalé sans
+bloquer la saisie, pour laisser construire la voie après coup.

@@ -18,6 +18,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   périurbain, fret ; électrique, thermique, bimode ; voie métrique) et
   compatibilité avec l'infrastructure : écartement, alimentation, vitesse
   permise selon la voie et la signalisation. Page « Matériel roulant ».
+- Lignes commerciales : création en cliquant les gares desservies (outil L),
+  itinéraire calculé sur le réseau, indice, couleur, matériel, cadence et
+  amplitude horaire ; lignes dessinées sur la carte, gares non reliées et
+  matériel incompatible signalés.
 
 ### Corrigé
 

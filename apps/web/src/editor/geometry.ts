@@ -1,4 +1,10 @@
-import { checkCurvature, minRadiusForSpeed, smoothAlignment, type LngLat } from '@trains/engine';
+import {
+  checkCurvature,
+  lineRoute,
+  minRadiusForSpeed,
+  smoothAlignment,
+  type LngLat,
+} from '@trains/engine';
 import { segmentPath, type Network, type Position, type Segment } from '@trains/shared';
 import type { FeatureCollection, LineString, Point } from 'geojson';
 
@@ -77,4 +83,42 @@ export function networkToGeoJSON(network: Network): NetworkGeoJSON {
 /** Prévisualisation du tronçon en cours de tracé, lissée comme le résultat final. */
 export function previewPath(points: readonly Position[], speedKmh: number): LngLat[] {
   return smoothAlignment(points, { radius: minRadiusForSpeed(speedKmh) });
+}
+
+export type LineFeatures = FeatureCollection<
+  LineString,
+  { id: string; code: string; color: string; offset: number }
+>;
+
+/**
+ * Tracé des lignes commerciales sur le réseau lissé. Les lignes qui
+ * partagent des tronçons sont décalées latéralement (index de la ligne) pour
+ * rester distinctes ; une ligne dont un intervalle n'est pas relié ne
+ * dessine que ses parties reliées.
+ */
+export function linesToGeoJSON(network: Network): LineFeatures {
+  const features: LineFeatures['features'] = [];
+  Object.values(network.lines).forEach((line, index) => {
+    const route = lineRoute(network, line);
+    for (const leg of route.legs) {
+      if (!leg || leg.steps.length === 0) continue;
+      const coordinates: [number, number][] = [];
+      for (const step of leg.steps) {
+        const segment = network.segments[step.segment];
+        if (!segment) continue;
+        const path = smoothedPath(network, segment);
+        const ordered = step.reversed ? [...path].reverse() : path;
+        for (const p of ordered) {
+          const last = coordinates.at(-1);
+          if (last?.[0] !== p[0] || last[1] !== p[1]) coordinates.push([p[0], p[1]]);
+        }
+      }
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates },
+        properties: { id: line.id, code: line.code, color: line.color, offset: index % 6 },
+      });
+    }
+  });
+  return { type: 'FeatureCollection', features };
 }
