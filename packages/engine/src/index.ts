@@ -6,3 +6,4 @@ export * from './costs.ts';
 export * from './compatibility.ts';
 export * from './routing.ts';
 export * from './travel.ts';
+export * from './demand.ts';
