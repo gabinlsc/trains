@@ -1,0 +1,145 @@
+# Modèle économique
+
+Ce document décrit comment le jeu chiffre un réseau. Les paramètres vivent
+dans `packages/engine/src/costs.ts` ; ce document et le code évoluent
+ensemble.
+
+## Principes
+
+- **Unité** : millions d'euros (M€) hors taxes, aux conditions économiques
+  de 2026. Les montants au-delà du milliard s'affichent en Md€.
+- **Ordres de grandeur** : les valeurs reprennent les fourchettes publiées
+  pour les projets ferroviaires français récents (lignes à grande vitesse,
+  modernisations, pôles d'échanges), telles que les rapportent notamment la
+  Cour des comptes et le Conseil d'orientation des infrastructures. Elles
+  servent à comparer des variantes de tracé, pas à établir un devis.
+- **Déterminisme** : le calcul est une fonction pure du réseau et du profil
+  en long. Deux joueurs qui dessinent la même ligne obtiennent le même coût.
+
+## Investissement
+
+### Voie et plateforme
+
+Prix au kilomètre d'une double voie, hors ouvrages d'art, terrassements,
+électrification et signalisation, selon la vitesse de conception :
+
+| Vitesse  | M€/km |
+| -------- | ----- |
+| 100 km/h | 4     |
+| 160 km/h | 6     |
+| 220 km/h | 10    |
+| 320 km/h | 16    |
+
+Interpolation linéaire entre les points ; en dessous de 100 km/h le prix
+reste à 4 M€/km, au-delà de 320 km/h la dernière pente se prolonge. Une
+vitesse plus élevée exige des rayons plus grands, une plateforme plus large
+et une voie plus soignée.
+
+Facteurs multiplicatifs :
+
+| Nombre de voies | Facteur |
+| --------------- | ------- |
+| Voie unique     | 0,6     |
+| Double voie     | 1       |
+| Quadruple voie  | 1,9     |
+
+La voie métrique coûte 75 % de la voie normale (voie, plateforme et
+ouvrages). Le facteur du nombre de voies s'applique à tous les postes
+linéaires : terrassements, ouvrages, électrification et signalisation.
+
+### Terrassements
+
+0,12 M€ par kilomètre et par mètre d'écart moyen entre la voie et le
+terrain, hors ouvrages. L'écart est tiré du profil en long (ligne rouge
+contre terrain) : 10 m de déblai ou de remblai moyen ajoutent 1,2 M€/km. Au
+delà de 15 m, le moteur propose un ouvrage (ADR-022).
+
+### Ouvrages d'art
+
+Prix au kilomètre d'ouvrage, double voie, voie portée comprise : la voie
+courante n'est pas comptée sous un ouvrage.
+
+| Ouvrage | M€/km |
+| ------- | ----- |
+| Tunnel  | 45    |
+| Viaduc  | 25    |
+| Pont    | 20    |
+
+### Équipements
+
+| Électrification  | M€/km | Commentaire                            |
+| ---------------- | ----- | -------------------------------------- |
+| Aucune           | 0     | traction thermique                     |
+| 25 kV alternatif | 1     | sous-stations espacées d'environ 50 km |
+| 1,5 kV continu   | 1,4   | sous-stations tous les 10 à 15 km      |
+
+| Signalisation | M€/km | Usage                                  |
+| ------------- | ----- | -------------------------------------- |
+| BAPR          | 0,25  | lignes peu circulées                   |
+| BAL           | 0,6   | lignes chargées                        |
+| ERTMS niv. 2  | 0,9   | signalisation en cabine, débit maximal |
+
+### Gares et bifurcations
+
+| Gare                   | Base (M€) | Par quai (M€) |
+| ---------------------- | --------- | ------------- |
+| Halte                  | 1,5       | 0             |
+| Gare                   | 6         | 1,5           |
+| Pôle de correspondance | 20        | 3             |
+| Gare TGV               | 40        | 5             |
+
+Reprendre une gare existante (code UIC) coûte 40 % du neuf : on la
+modernise et on l'agrandit au lieu de la construire.
+
+Une bifurcation à niveau coûte 4 M€ ; un saut-de-mouton, qui supprime les
+cisaillements, ajoute 20 M€.
+
+### Études et aléas
+
+Une provision de 15 % s'ajoute à la somme des travaux : études, maîtrise
+d'œuvre, acquisitions foncières courantes et aléas de chantier.
+
+### Ordres de grandeur obtenus
+
+- LGV de 100 km en terrain moyen (5 m d'écart moyen, ERTMS, 25 kV) :
+  environ 2,1 Md€, soit 21 M€/km hors grands ouvrages.
+- Ligne classique à 160 km/h, double voie, BAL et 25 kV, en plaine :
+  environ 8,7 M€/km.
+- Un tunnel de 4 km sur une ligne à 160 km/h, équipements compris : environ
+  215 M€.
+
+## Entretien
+
+Chaque poste coûte chaque année une part de son investissement :
+
+| Poste           | Taux annuel |
+| --------------- | ----------- |
+| Voie            | 1,2 %       |
+| Terrassements   | 0,4 %       |
+| Ouvrages d'art  | 0,5 %       |
+| Électrification | 2 %         |
+| Signalisation   | 3 %         |
+| Gares           | 1,5 %       |
+| Bifurcations    | 2 %         |
+
+Une ligne nouvelle coûte ainsi de l'ordre de 1 à 1,5 % de son
+investissement par an.
+
+## Dans l'interface
+
+- L'inspecteur affiche le coût d'une gare, d'une bifurcation, et celui d'un
+  tronçon hors ouvrages d'art (sans profil en long, le moteur ne les connaît
+  pas encore).
+- Le profil en long ajoute le coût complet du tronçon sélectionné : voie,
+  terrassements, tunnels et viaducs proposés, équipements et provision.
+
+## Limites connues
+
+- Pas de surcoût urbain ni foncier différencié : traverser une agglomération
+  coûte aujourd'hui le prix d'une plaine.
+- Les ponts ne sont pas encore détectés automatiquement au franchissement
+  des cours d'eau ; seuls tunnels et viaducs sont proposés.
+- En montagne, la ligne rouge enchaîne des ouvrages courts plutôt qu'un
+  tunnel de base (ADR-022) ; le coût reflète ce tracé, pas l'optimum.
+- Les recettes, l'exploitation des services et le matériel roulant viennent
+  avec les lignes commerciales (phase 3, branches suivantes).

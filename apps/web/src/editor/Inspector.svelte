@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { checkCurvature, minRadiusForSpeed, polylineLength } from '@trains/engine';
+  import {
+    checkCurvature,
+    junctionCost,
+    minRadiusForSpeed,
+    polylineLength,
+    segmentCost,
+    stationCost,
+  } from '@trains/engine';
   import {
     ElectrificationSchema,
     GaugeSchema,
@@ -12,6 +19,7 @@
   } from '@trains/shared';
   import { t } from '../i18n/index.ts';
   import { smoothedPath } from './geometry.ts';
+  import { formatMoney } from './money.ts';
   import { DEFAULT_PLATFORMS, type EditorStore } from './store.svelte.ts';
 
   let { store }: { store: EditorStore } = $props();
@@ -27,8 +35,10 @@
   const segmentInfo = $derived.by(() => {
     if (!segment) return null;
     const path = smoothedPath(store.network, segment);
+    const lengthM = polylineLength(path);
     return {
-      km: polylineLength(path) / 1000,
+      km: lengthM / 1000,
+      cost: segmentCost({ lengthM, spec: segment.spec }).total,
       curves: checkCurvature(path, minRadiusForSpeed(segment.spec.designSpeedKmh)).length,
     };
   });
@@ -139,6 +149,15 @@
       </label>
     {/if}
     <p class="muted">{t('inspector.branches', { count: branches })}</p>
+    {#if node.station !== undefined || node.kind === 'junction'}
+      <p class="cost">
+        {t('inspector.cost', {
+          amount: formatMoney(
+            node.station ? stationCost(node.station) : junctionCost(node.flyover ?? false),
+          ),
+        })}
+      </p>
+    {/if}
   </aside>
 {:else if segment && segmentInfo}
   <aside class="inspector" aria-label={t('inspector.title')}>
@@ -210,6 +229,7 @@
         {/each}
       </select>
     </label>
+    <p class="cost">{t('inspector.costPlain', { amount: formatMoney(segmentInfo.cost) })}</p>
     {#if segmentInfo.curves > 0}
       <p class="warn">{t('inspector.curves', { count: segmentInfo.curves })}</p>
     {/if}
@@ -258,6 +278,11 @@
   select {
     font: inherit;
     font-weight: 400;
+  }
+
+  .cost {
+    margin: 0;
+    font-weight: 600;
   }
 
   .muted,

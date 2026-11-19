@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { segmentCost } from '@trains/engine';
   import { t } from '../i18n/index.ts';
+  import { formatMoney } from './money.ts';
   import { smoothedPath } from './geometry.ts';
   import {
     analyseProfile,
@@ -22,6 +24,17 @@
   const path = $derived(segment ? smoothedPath(store.network, segment) : null);
   const analysis = $derived<ProfileAnalysis | null>(
     profile && segment ? analyseProfile(profile, segment.spec.designSpeedKmh) : null,
+  );
+
+  const cost = $derived(
+    analysis && segment
+      ? segmentCost({
+          lengthM: analysis.length,
+          spec: segment.spec,
+          structures: analysis.structures.map((s) => ({ kind: s.kind, lengthM: s.to - s.from })),
+          earthworkDepthM: analysis.earthworkDepth,
+        }).total
+      : null,
   );
 
   // Récupère le profil à chaque changement de tracé, après une courte pause
@@ -151,6 +164,13 @@
           tunnels: km.format(a.tunnelLength / 1000),
           viaducts: km.format(a.viaductLength / 1000),
         })}
+        {#if cost !== null && a.length > 0}
+          <br />
+          {t('profile.cost', {
+            amount: formatMoney(cost),
+            perKm: formatMoney(cost / (a.length / 1000)),
+          })}
+        {/if}
       </p>
     {/if}
   </div>
