@@ -17,12 +17,14 @@
     type Station,
     type TrackSpec,
   } from '@trains/shared';
+  import type { DemandModel } from '../demand/model.svelte.ts';
   import { t } from '../i18n/index.ts';
   import { smoothedPath } from './geometry.ts';
   import { formatMoney } from './money.ts';
   import { DEFAULT_PLATFORMS, type EditorStore } from './store.svelte.ts';
 
-  let { store }: { store: EditorStore } = $props();
+  let { store, demand }: { store: EditorStore; demand: DemandModel } = $props();
+  const count = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 
   const SPEEDS = [60, 100, 160, 220, 320] as const;
   const fmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
@@ -132,6 +134,15 @@
         />
         {t('inspector.terminus')}
       </label>
+      {@const area = demand.result?.catchments[node.id]}
+      {#if area}
+        <p class="muted">
+          {t('inspector.demand', {
+            population: count.format(area.population),
+            boardings: count.format(demand.result?.boardings[node.id] ?? 0),
+          })}
+        </p>
+      {/if}
       {#if node.station.existingUic}
         <p class="muted">{t('inspector.existing', { uic: node.station.existingUic })}</p>
       {/if}

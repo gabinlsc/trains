@@ -524,3 +524,23 @@ en 1 h 27, marge comprise ; les courbes, les sections à vitesse réduite et
 les arrêts allongent ensuite le trajet comme sur une ligne réelle. Les
 rampes seront prises en compte quand le profil en long sera disponible pour
 tous les tronçons.
+
+## ADR-029 — Demande gravitaire et logit, calculée dans un worker
+
+**Contexte.** La fréquentation des lignes et leurs recettes doivent réagir
+au tracé et à l'offre sans figer l'interface ; le calcul croise des
+dizaines de milliers de communes avec les gares.
+
+**Décision.** Un modèle à quatre étapes simplifié, dans le moteur :
+rabattement des communes sur la gare desservie la plus proche, marché
+gravitaire entre gares, partage modal par logit binaire contre la voiture,
+affectation au plus court chemin généralisé sur les lignes. Il s'exécute
+dans un worker dédié, recalculé 400 ms après la dernière modification ; un
+résultat périmé est ignoré. Les paramètres sont des constantes exportées,
+calées sur un ordre de grandeur réel et décrits dans
+`docs/MODELE-ECONOMIQUE.md`.
+
+**Conséquences.** La fréquentation, les recettes et le remplissage
+s'affichent par ligne, le bassin et les montées par gare. Sans les données
+des communes, la demande est déclarée indisponible et l'éditeur reste
+entièrement utilisable.

@@ -7,18 +7,22 @@
     type Line,
     type TrackSpec,
   } from '@trains/shared';
+  import type { DemandModel } from '../demand/model.svelte.ts';
   import { t } from '../i18n/index.ts';
   import { formatMoney } from './money.ts';
   import { analyseLine, clockTime, formatDuration } from './service.ts';
   import type { EditorStore } from './store.svelte.ts';
 
-  let { store }: { store: EditorStore } = $props();
+  let { store, demand }: { store: EditorStore; demand: DemandModel } = $props();
+  const count = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+  const percent = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 0 });
 
   const HEADWAYS = [10, 15, 20, 30, 60, 120, 240] as const;
   const km = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 
   const lines = $derived(Object.values(store.network.lines));
   const line = $derived(store.activeLine ? store.network.lines[store.activeLine] : undefined);
+  const load = $derived(line ? demand.result?.lines[line.id] : undefined);
 
   const details = $derived.by(() => {
     if (!line) return null;
@@ -183,6 +187,21 @@
               operating: formatMoney(details.service.operatingCostM ?? 0),
             })}
           </p>
+        {/if}
+        {#if load}
+          <p class="figure">
+            {t('lines.ridership', {
+              trips: count.format(load.tripsPerDay),
+              revenue: formatMoney(load.revenueM),
+            })}
+          </p>
+          <p class="muted">
+            {t('lines.loadFactor', { value: percent.format(load.peakLoadFactor) })}
+          </p>
+        {:else if demand.status === 'loading' || demand.status === 'computing'}
+          <p class="muted" role="status">{t('lines.demandPending')}</p>
+        {:else if demand.status === 'unavailable'}
+          <p class="muted">{t('lines.demandUnavailable')}</p>
         {/if}
         <ol class="stops" aria-label={t('lines.timetable')}>
           {#each details.stopNames as name, i (i)}

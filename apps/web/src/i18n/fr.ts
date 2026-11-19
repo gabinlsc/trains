@@ -158,6 +158,7 @@ export const fr = {
     curves: 'Courbes trop serrées : {count}',
     multiple: '{count} éléments sélectionnés',
     cost: 'Coût estimé : {amount}',
+    demand: 'Bassin : {population} habitants · {boardings} montées par jour',
     costPlain: 'Coût estimé hors ouvrages d’art : {amount}',
   },
   lines: {
@@ -178,6 +179,10 @@ export const fr = {
     trip: 'Temps de parcours : {duration} · {speed} km/h de moyenne',
     fleet: 'Parc : {count} rame(s) ({price}) · exploitation {operating} par an',
     timetable: 'Horaire du premier train',
+    ridership: 'Fréquentation : {trips} voyageurs par jour · recettes {revenue} par an',
+    loadFactor: 'Remplissage du tronçon le plus chargé : {value} des places offertes',
+    demandPending: 'Calcul de la fréquentation…',
+    demandUnavailable: 'Fréquentation indisponible : données des communes absentes.',
     issues: {
       gauge: 'Ce matériel n’a pas l’écartement de certains tronçons.',
       power:
