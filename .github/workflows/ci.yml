@@ -88,6 +88,12 @@ jobs:
     name: e2e
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # Image officielle de Playwright : Chromium et ses dépendances système y sont
+    # déjà installés, le job ne dépend plus des miroirs apt d'Ubuntu. Sa version
+    # suit celle de @playwright/test dans apps/web/package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -95,9 +101,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Navigateur Chromium pour Playwright
-        run: pnpm --filter @trains/web exec playwright install --with-deps chromium
+      # Seule l'application web et ses paquets internes sont utiles ici : le
+      # serveur (better-sqlite3, à compiler) n'est pas démarré par les tests.
+      - run: pnpm install --frozen-lockfile --filter "@trains/web..."
       - run: pnpm --filter @trains/web build
       - run: pnpm --filter @trains/web e2e
       - name: Rapport en cas d'échec
