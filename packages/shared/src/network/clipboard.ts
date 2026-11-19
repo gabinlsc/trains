@@ -72,5 +72,5 @@ export function pasteFragment(
       structures: segment.structures.map((s) => ({ ...s })),
     };
   }
-  return { network: { nodes, segments }, nodeIds: [...mapping.values()], segmentIds };
+  return { network: { ...network, nodes, segments }, nodeIds: [...mapping.values()], segmentIds };
 }

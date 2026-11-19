@@ -1,5 +1,5 @@
 import { DEFAULT_TRACK_SPEC, type TrackSpec } from '../infrastructure.ts';
-import type { Id, Network, NetworkNode, Position, Segment, Station } from './model.ts';
+import type { Id, Line, Network, NetworkNode, Position, Segment, Station } from './model.ts';
 
 /**
  * Opérations d'édition du réseau. Toutes sont pures : elles renvoient un
@@ -7,7 +7,7 @@ import type { Id, Network, NetworkNode, Position, Segment, Station } from './mod
  * triviale (on garde l'état précédent) et partage la structure inchangée.
  */
 
-export type IdFactory = (prefix: 'n' | 's') => Id;
+export type IdFactory = (prefix: 'n' | 's' | 'l') => Id;
 
 /** Identifiants aléatoires en base 36 : sans collision en pratique, courts dans les sauvegardes. */
 export const randomId: IdFactory = (prefix) => {
@@ -81,6 +81,13 @@ export function moveNode(network: Network, id: Id, position: Position): Network 
   return { ...network, nodes: { ...network.nodes, [id]: { ...node, position } } };
 }
 
+/** Une gare qui cesse de l'être n'est plus desservie. */
+function dropUnservedStops(network: Network, nodeId: Id): Network {
+  if (network.nodes[nodeId]?.kind === 'station') return network;
+  const lines = withoutStop(network.lines, nodeId);
+  return lines === network.lines ? network : { ...network, lines };
+}
+
 export function updateNode(
   network: Network,
   id: Id,
@@ -93,7 +100,10 @@ export function updateNode(
     delete next.station;
     next.kind = 'waypoint';
   }
-  return withDerivedKind({ ...network, nodes: { ...network.nodes, [id]: next } }, id);
+  return dropUnservedStops(
+    withDerivedKind({ ...network, nodes: { ...network.nodes, [id]: next } }, id),
+    id,
+  );
 }
 
 /** Supprime un nœud et, en cascade, les tronçons qui le touchent. */
@@ -109,9 +119,28 @@ export function removeNode(network: Network, id: Id): Network {
       segments[key] = segment;
     }
   }
-  let next: Network = { nodes, segments };
+  let next: Network = { ...network, nodes, segments, lines: withoutStop(network.lines, id) };
   for (const other of touched) next = withDerivedKind(next, other);
   return next;
+}
+
+/** Retire un arrêt des lignes qui le desservent ; une ligne réduite à un arrêt disparaît. */
+function withoutStop(lines: Network['lines'], nodeId: Id): Network['lines'] {
+  let changed = false;
+  const next: Network['lines'] = {};
+  for (const [key, line] of Object.entries(lines)) {
+    if (!line.stops.includes(nodeId)) {
+      next[key] = line;
+      continue;
+    }
+    changed = true;
+    // Deux arrêts identiques consécutifs fusionnent (aller-retour sur la gare retirée).
+    const stops = line.stops
+      .filter((stop) => stop !== nodeId)
+      .filter((stop, i, all) => stop !== all[i - 1]);
+    if (stops.length >= 2) next[key] = { ...line, stops };
+  }
+  return changed ? next : lines;
 }
 
 export function addSegment(
@@ -312,4 +341,55 @@ export function insertNodeOnSegment(
   const withPoint = updateSegment(network, segmentId, { via });
   const split = splitSegment(withPoint, segmentId, projection.index, ids);
   return { network: split.network, node: split.node };
+}
+
+// --- Lignes commerciales -------------------------------------------------------
+
+export type LineInput = Omit<Line, 'id'>;
+
+function checkStops(network: Network, stops: readonly Id[]): void {
+  if (stops.length < 2) throw new NetworkError('une ligne dessert au moins deux gares');
+  for (const stop of stops) {
+    if (requireNode(network, stop).kind !== 'station') {
+      throw new NetworkError('une ligne ne s’arrête qu’en gare');
+    }
+  }
+  if (stops.some((stop, i) => stop === stops[i - 1])) {
+    throw new NetworkError('deux arrêts consécutifs identiques');
+  }
+}
+
+export function addLine(
+  network: Network,
+  input: LineInput,
+  options: { id?: Id; ids?: IdFactory } = {},
+): { network: Network; line: Line } {
+  checkStops(network, input.stops);
+  const id = options.id ?? (options.ids ?? randomId)('l');
+  if (network.lines[id]) throw new NetworkError(`ligne ${id} déjà présente`);
+  const line: Line = { ...input, stops: [...input.stops], id };
+  return { network: { ...network, lines: { ...network.lines, [id]: line } }, line };
+}
+
+export function updateLine(network: Network, id: Id, patch: Partial<LineInput>): Network {
+  const line = network.lines[id];
+  if (!line) throw new NetworkError(`ligne ${id} inexistante`);
+  if (patch.stops) checkStops(network, patch.stops);
+  const next = { ...line, ...patch };
+  if (next.lastDepartureMin < next.firstDepartureMin) {
+    throw new NetworkError('le dernier départ précède le premier');
+  }
+  return { ...network, lines: { ...network.lines, [id]: next } };
+}
+
+export function removeLine(network: Network, id: Id): Network {
+  if (!network.lines[id]) throw new NetworkError(`ligne ${id} inexistante`);
+  return { ...network, lines: omit(network.lines, id) };
+}
+
+/** Départs par jour et par sens. */
+export function departuresPerDay(
+  line: Pick<Line, 'headwayMin' | 'firstDepartureMin' | 'lastDepartureMin'>,
+): number {
+  return Math.floor((line.lastDepartureMin - line.firstDepartureMin) / line.headwayMin) + 1;
 }
