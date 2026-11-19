@@ -184,6 +184,8 @@ test('créer une ligne commerciale entre deux gares et choisir son matériel', a
   await expect(settings.getByRole('list', { name: 'Horaire du premier train' })).toContainText(
     '06:00',
   );
+  // La demande est calculée dans un worker à partir des communes publiées.
+  await expect(settings).toContainText(/Fréquentation : [\d\s]+ voyageurs par jour/);
   await expect(page.getByRole('button', { name: 'Annuler (Ctrl+Z)' })).toHaveAttribute(
     'title',
     'Annuler : Modifier la ligne',

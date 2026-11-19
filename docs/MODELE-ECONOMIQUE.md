@@ -136,6 +136,37 @@ investissement par an.
   par les départs quotidiens des deux sens, la longueur de la ligne et
   365 jours.
 
+## Demande et recettes
+
+Le modèle de demande (`packages/engine/src/demand.ts`) tourne dans un
+worker du navigateur à chaque modification du réseau.
+
+1. **Rabattement** : chaque commune rejoint la gare desservie la plus
+   proche à moins de 20 km. Temps d'accès : 5 min plus le trajet à
+   25 km/h.
+2. **Marché** : entre deux gares, le nombre de déplacements quotidiens tous
+   modes vaut K · Pᵢ · Pⱼ / d², avec Pᵢ et Pⱼ les populations rabattues, d
+   la distance à vol d'oiseau (au moins 10 km) et K = 3,5 × 10⁻⁴, calé
+   pour qu'une LGV Paris – Lyon transporte de l'ordre de 25 000 voyageurs
+   par jour entre les deux villes.
+3. **Partage modal** : logit binaire sur les coûts généralisés (minutes).
+   - Train : accès et diffusion, attente (moitié de l'intervalle, au plus
+     30 min), trajet, 10 min par correspondance, prix du billet converti au
+     taux de 25 €/h, et une constante de 30 min (contrainte d'horaire).
+   - Voiture : route 1,3 fois plus longue que le vol d'oiseau, 55, 80 ou
+     100 km/h selon la distance, 10 min de stationnement, 0,20 €/km
+     partagés entre 1,6 occupants.
+   - Part du train : 1 / (1 + exp(4 · (Ctrain − Cvoiture) / Cvoiture)).
+4. **Affectation** : les voyageurs du train suivent le chemin de coût
+   généralisé minimal sur les lignes, correspondances comprises.
+
+Recette moyenne par voyageur-kilomètre : 0,11 € en grande vitesse,
+0,09 € en intercités, 0,08 € en régional, 0,07 € en périurbain.
+
+Limites : pas de demande induite (le marché tous modes ne dépend pas de
+l'offre), pas de concurrence de l'avion ni du réseau ferré existant, et pas
+de pointe horaire : le remplissage se mesure sur la journée.
+
 ## Dans l'interface
 
 - L'inspecteur affiche le coût d'une gare, d'une bifurcation, et celui d'un

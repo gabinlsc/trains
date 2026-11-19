@@ -18,6 +18,7 @@
   import { EditorController } from '../editor/controller.ts';
   import type { SnapTarget } from '../editor/snap.ts';
   import { EditorStore } from '../editor/store.svelte.ts';
+  import { DemandModel } from '../demand/model.svelte.ts';
   import Inspector from '../editor/Inspector.svelte';
   import LinesPanel from '../editor/LinesPanel.svelte';
   import ProfileDrawer from '../editor/ProfileDrawer.svelte';
@@ -39,6 +40,7 @@
   let appliedTheme = theme.effective;
   const overlays = new OverlayManager();
   const editor = new EditorStore();
+  const demand = new DemandModel();
   const persistence = new GamePersistence(
     editor,
     typeof indexedDB === 'undefined' ? null : new GameStorage(indexedDB),
@@ -192,6 +194,11 @@
     controller?.renderLineDraft(editor.lineDraft);
   });
 
+  // La demande suit chaque modification du réseau (calcul différé, en worker).
+  $effect(() => {
+    demand.update(editor.network);
+  });
+
   // Sauvegarde locale différée après chaque changement du réseau ou du nom.
   $effect(() => {
     persistence.changed(editor.network, editor.name);
@@ -204,6 +211,7 @@
 
   onDestroy(() => {
     persistence.schedule.flush();
+    demand.dispose();
     map?.remove();
     map = null;
   });
@@ -221,8 +229,8 @@
   {#if !webglError}
     <LayersPanel manager={overlays} />
     <Toolbar store={editor} />
-    <Inspector store={editor} />
-    <LinesPanel store={editor} />
+    <Inspector store={editor} {demand} />
+    <LinesPanel store={editor} {demand} />
     <GamePanel store={editor} {persistence} />
     <ProfileDrawer store={editor} />
   {/if}

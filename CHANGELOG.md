@@ -25,6 +25,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Marches types : temps de parcours selon la voie, les courbes et les
   performances du matériel, horaire des gares, vitesse moyenne, parc de
   rames nécessaire et coût d'exploitation annuel de chaque ligne.
+- Modèle de demande dans un worker : rabattement des communes sur les gares,
+  marché gravitaire, partage modal face à la voiture, affectation sur les
+  lignes ; fréquentation, recettes et remplissage par ligne, bassin et
+  montées par gare.
 
 ### Corrigé
 
