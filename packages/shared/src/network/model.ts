@@ -71,12 +71,66 @@ export const SegmentSchema = z.object({
 });
 export type Segment = z.infer<typeof SegmentSchema>;
 
+/** Plage horaire de service, en minutes depuis minuit. */
+export const MINUTES_PER_DAY = 24 * 60;
+
+/**
+ * Ligne commerciale : une suite d'arrêts en gare, desservie dans les deux
+ * sens par un matériel du catalogue, à intervalle régulier (cadence).
+ */
+export const LineSchema = z.object({
+  id: IdSchema,
+  name: z.string().trim().min(1).max(60),
+  /** Indice court affiché sur la carte (« TER 1 », « K12 »…). */
+  code: z.string().trim().min(1).max(8),
+  color: z.string().regex(/^#[0-9a-f]{6}$/),
+  /** Identifiant du matériel roulant (catalogue). */
+  stock: z.string().min(1),
+  stops: z.array(IdSchema).min(2).max(100),
+  /** Intervalle entre deux départs (min). */
+  headwayMin: z.number().int().min(5).max(240),
+  /** Premier et dernier départ (minutes depuis minuit). */
+  firstDepartureMin: z
+    .number()
+    .int()
+    .min(0)
+    .max(MINUTES_PER_DAY - 1),
+  lastDepartureMin: z
+    .number()
+    .int()
+    .min(0)
+    .max(MINUTES_PER_DAY - 1),
+});
+export type Line = z.infer<typeof LineSchema>;
+
 export const NetworkSchema = z
   .object({
     nodes: z.record(IdSchema, NodeSchema),
     segments: z.record(IdSchema, SegmentSchema),
+    // Absent des sauvegardes antérieures aux lignes commerciales.
+    lines: z.record(IdSchema, LineSchema).default({}),
   })
   .superRefine((network, ctx) => {
+    for (const [key, line] of Object.entries(network.lines)) {
+      if (line.id !== key)
+        ctx.addIssue({ code: 'custom', path: ['lines', key], message: 'identifiant incohérent' });
+      line.stops.forEach((stop, i) => {
+        if (network.nodes[stop]?.kind !== 'station') {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['lines', key, 'stops', i],
+            message: 'arrêt hors gare',
+          });
+        }
+      });
+      if (line.lastDepartureMin < line.firstDepartureMin) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['lines', key],
+          message: 'dernier départ avant le premier',
+        });
+      }
+    }
     for (const [key, node] of Object.entries(network.nodes)) {
       if (node.id !== key)
         ctx.addIssue({ code: 'custom', path: ['nodes', key], message: 'identifiant incohérent' });
@@ -116,4 +170,4 @@ export const NetworkSchema = z
   });
 export type Network = z.infer<typeof NetworkSchema>;
 
-export const EMPTY_NETWORK: Network = { nodes: {}, segments: {} };
+export const EMPTY_NETWORK: Network = { nodes: {}, segments: {}, lines: {} };

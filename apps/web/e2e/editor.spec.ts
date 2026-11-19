@@ -139,3 +139,50 @@ test('aboutir sur un tronçon crée une bifurcation, qui peut devenir une gare',
   await inspector.getByLabel('Nom').fill('Bifurcation Nord');
   await expect(inspector.getByLabel('Nom')).toHaveValue('Bifurcation Nord');
 });
+
+test('créer une ligne commerciale entre deux gares et choisir son matériel', async ({ page }) => {
+  await openMap(page);
+  await drawLine(page);
+  const box = await page.locator('canvas.maplibregl-canvas').boundingBox();
+  if (!box) throw new Error('carte absente');
+  const at = (fx: number, fy: number): [number, number] => [
+    box.x + box.width * fx,
+    box.y + box.height * fy,
+  ];
+  const inspector = page.getByRole('complementary', { name: 'Inspecteur' });
+  await page.keyboard.press('v');
+  // Les deux extrémités du tracé deviennent des gares.
+  for (const [fx, fy] of [
+    [0.45, 0.4],
+    [0.65, 0.65],
+  ] as const) {
+    await expect(async () => {
+      await page.mouse.click(...at(fx, fy));
+      await expect(inspector.getByRole('heading', { name: 'Point de passage' })).toBeVisible({
+        timeout: 500,
+      });
+    }).toPass();
+    await inspector.getByLabel('Gare voyageurs').check();
+  }
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('l');
+  await expect(page.getByText('0 gare(s) choisie(s)')).toBeVisible();
+  await page.mouse.click(...at(0.45, 0.4));
+  await page.mouse.click(...at(0.65, 0.65));
+  await expect(page.getByText('2 gare(s) choisie(s)')).toBeVisible();
+  await page.keyboard.press('Enter');
+
+  const panel = page.getByRole('region', { name: 'Lignes' });
+  await expect(panel.getByRole('button', { name: /L1/ })).toHaveAttribute('aria-pressed', 'true');
+  const settings = panel.getByRole('group', { name: 'Réglages de la ligne L1' });
+  await expect(settings).toContainText('départs par jour et par sens');
+  await settings.getByLabel('Matériel').selectOption({ label: 'Autorail thermique' });
+  await settings.getByLabel('Cadence').selectOption({ label: 'toutes les 30 min' });
+  await expect(settings).toContainText('33 départs par jour et par sens');
+  await expect(page.getByRole('button', { name: 'Annuler (Ctrl+Z)' })).toHaveAttribute(
+    'title',
+    'Annuler : Modifier la ligne',
+  );
+  await settings.getByRole('button', { name: 'Supprimer la ligne' }).click();
+  await expect(panel.getByText('Aucune ligne')).toHaveCount(0);
+});

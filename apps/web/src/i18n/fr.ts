@@ -102,6 +102,10 @@ export const fr = {
     toolbar: 'Outils d’édition',
     select: 'Sélectionner (V)',
     draw: 'Tracer une voie (T)',
+    line: 'Créer une ligne commerciale (L)',
+    lineHint:
+      'Cliquez les gares desservies dans l’ordre, Entrée pour créer la ligne, Retour arrière pour retirer la dernière, Échap pour annuler.',
+    lineStops: '{count} gare(s) choisie(s)',
     undo: 'Annuler (Ctrl+Z)',
     redo: 'Rétablir (Ctrl+Maj+Z)',
     undoNamed: 'Annuler : {label}',
@@ -155,6 +159,27 @@ export const fr = {
     multiple: '{count} éléments sélectionnés',
     cost: 'Coût estimé : {amount}',
     costPlain: 'Coût estimé hors ouvrages d’art : {amount}',
+  },
+  lines: {
+    title: 'Lignes',
+    empty: 'Aucune ligne : cliquez des gares dans l’ordre pour en créer une.',
+    settings: 'Réglages de la ligne {code}',
+    name: 'Nom',
+    code: 'Indice',
+    color: 'Couleur',
+    stock: 'Matériel',
+    headway: 'Cadence',
+    every: 'toutes les {minutes} min',
+    first: 'Premier départ',
+    last: 'Dernier départ',
+    summary: '{km} km · {departures} départs par jour et par sens',
+    unreachable: 'Gares non reliées par le réseau : {stops}.',
+    delete: 'Supprimer la ligne',
+    issues: {
+      gauge: 'Ce matériel n’a pas l’écartement de certains tronçons.',
+      power:
+        'Ce matériel électrique ne peut pas circuler sur certains tronçons (caténaire absente ou tension non acceptée).',
+    },
   },
   stationTypes: {
     halte: 'Halte',

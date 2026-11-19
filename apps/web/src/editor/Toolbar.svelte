@@ -38,6 +38,23 @@
       /></svg
     >
   </button>
+  <button
+    type="button"
+    aria-pressed={store.tool === 'line'}
+    title={t('editor.line')}
+    aria-label={t('editor.line')}
+    onclick={() => {
+      store.setTool('line');
+    }}
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"
+      ><path d="M4 18h16" /><circle cx="5" cy="18" r="2.2" /><circle
+        cx="12"
+        cy="18"
+        r="2.2"
+      /><circle cx="19" cy="18" r="2.2" /><path d="M6 10h12M14 6l4 4-4 4" /></svg
+    >
+  </button>
   <hr />
   <button
     type="button"
@@ -94,6 +111,13 @@
     <p class="radius">
       {t('editor.radius', { radius: fmt.format(minRadiusForSpeed(store.spec.designSpeedKmh)) })}
     </p>
+  </div>
+{/if}
+
+{#if store.tool === 'line'}
+  <div class="draw-panel" role="group" aria-label={t('editor.line')}>
+    <p class="hint">{t('editor.lineHint')}</p>
+    <p class="radius">{t('editor.lineStops', { count: store.lineDraft.length })}</p>
   </div>
 {/if}
 

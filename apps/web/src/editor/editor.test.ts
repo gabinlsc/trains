@@ -1,6 +1,6 @@
 import { addNode, addSegment, EMPTY_NETWORK, type Network, type Position } from '@trains/shared';
 import { describe, expect, it } from 'vitest';
-import { networkToGeoJSON, previewPath } from './geometry.ts';
+import { linesToGeoJSON, networkToGeoJSON, previewPath } from './geometry.ts';
 import { findSnap, type SnapTarget } from './snap.ts';
 import { DEFAULT_PLATFORMS, EditorStore } from './store.svelte.ts';
 
@@ -203,5 +203,53 @@ describe('état de l’éditeur', () => {
     expect(store.network.segments.s_ssssss?.spec).toMatchObject({ tracks: 4, designSpeedKmh: 220 });
     store.setFlyover('n_aaaaaa', true);
     expect(store.network.nodes.n_aaaaaa?.flyover).toBe(true);
+  });
+
+  it('crée une ligne en cliquant des gares, avec des réglages par défaut', () => {
+    const store = new EditorStore(network());
+    const station = { type: 'gare' as const, platforms: 2, terminus: false };
+    store.setStation('n_aaaaaa', station);
+    store.setStation('n_cccccc', station);
+    store.renameNode('n_aaaaaa', 'Bourges');
+    store.seal();
+    store.setTool('line');
+    store.addStop('n_aaaaaa');
+    store.addStop('n_aaaaaa');
+    expect(store.finishLine()).toBeNull();
+    expect(store.error).toMatch(/deux gares/);
+    store.addStop('n_cccccc');
+    expect(store.lineDraft).toEqual(['n_aaaaaa', 'n_cccccc']);
+    const id = store.finishLine();
+    const line = store.network.lines[id ?? ''];
+    expect(line).toMatchObject({ code: 'L1', name: 'Bourges – Gare', headwayMin: 60 });
+    expect(store.activeLine).toBe(id);
+    expect(store.tool).toBe('select');
+    expect(store.lineDraft).toEqual([]);
+
+    const geo = linesToGeoJSON(store.network);
+    expect(geo.features).toHaveLength(1);
+    expect(geo.features[0]?.properties).toMatchObject({ code: 'L1', offset: 0 });
+    expect(geo.features[0]?.geometry.coordinates.length).toBeGreaterThan(2);
+
+    store.updateLine(id ?? '', { headwayMin: 30 });
+    expect(store.network.lines[id ?? '']?.headwayMin).toBe(30);
+    store.removeLine(id ?? '');
+    expect(store.network.lines).toEqual({});
+    expect(store.activeLine).toBeNull();
+  });
+
+  it('refuse un arrêt hors gare et retire le dernier arrêt saisi', () => {
+    const store = new EditorStore(network());
+    store.setTool('line');
+    store.addStop('n_aaaaaa');
+    expect(store.error).toMatch(/qu’en gare/);
+    expect(store.lineDraft).toEqual([]);
+    store.setStation('n_aaaaaa', { type: 'halte', platforms: 1, terminus: false });
+    store.addStop('n_aaaaaa');
+    store.removeLastStop();
+    expect(store.lineDraft).toEqual([]);
+    store.addStop('n_aaaaaa');
+    store.setTool('select');
+    expect(store.lineDraft).toEqual([]);
   });
 });

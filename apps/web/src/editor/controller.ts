@@ -8,7 +8,7 @@ import type {
   MapMouseEvent,
 } from 'maplibre-gl';
 import type { Theme } from '../map/style.ts';
-import { networkToGeoJSON, previewPath } from './geometry.ts';
+import { linesToGeoJSON, networkToGeoJSON, previewPath } from './geometry.ts';
 import { findSnap, SNAP_RADIUS_PX, type SnapTarget } from './snap.ts';
 import type { DraftPoint, EditorStore } from './store.svelte.ts';
 
@@ -17,6 +17,8 @@ const SRC = {
   nodes: 'editor-nodes',
   issues: 'editor-issues',
   draft: 'editor-draft',
+  lines: 'editor-lines',
+  lineDraft: 'editor-line-draft',
 } as const;
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
@@ -68,6 +70,34 @@ function layers(theme: Theme): LayerSpecification[] {
         'line-width': ['interpolate', ['linear'], ['zoom'], 5, 2, 12, 4],
         'line-dasharray': [2, 1.5],
       },
+    },
+    {
+      // Lignes commerciales, au-dessus des voies, décalées quand elles se
+      // partagent un tronçon.
+      id: 'editor-lines',
+      type: 'line',
+      source: SRC.lines,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 5, 2, 12, 4],
+        'line-offset': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5,
+          ['*', ['get', 'offset'], 2.5],
+          12,
+          ['*', ['get', 'offset'], 5],
+        ],
+      },
+    },
+    {
+      id: 'editor-line-draft',
+      type: 'line',
+      source: SRC.lineDraft,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': ink, 'line-width': 2.5, 'line-dasharray': [1, 1.5] },
     },
     {
       id: 'editor-draft',
@@ -231,10 +261,27 @@ export class EditorController {
     void this.map.getSource<GeoJSONSource>(SRC.segments)?.setData(geo.segments);
     void this.map.getSource<GeoJSONSource>(SRC.nodes)?.setData(geo.nodes);
     void this.map.getSource<GeoJSONSource>(SRC.issues)?.setData(geo.issues);
+    void this.map.getSource<GeoJSONSource>(SRC.lines)?.setData(linesToGeoJSON(network));
+    this.renderLineDraft();
     const selected = ['in', ['get', 'id'], ['literal', [...selection]]] as const;
     this.map.setFilter('editor-segments-selected', selected as never);
     this.map.setFilter('editor-nodes-selected', selected as never);
     this.renderDraft();
+  }
+
+  /** Gares déjà cliquées pour la ligne en cours, reliées à vol d'oiseau. */
+  renderLineDraft(stops: readonly Id[] = this.store.lineDraft): void {
+    const coordinates = stops
+      .map((id) => this.store.network.nodes[id]?.position)
+      .filter((p): p is Position => p !== undefined)
+      .map((p) => [p[0], p[1]]);
+    void this.map
+      .getSource<GeoJSONSource>(SRC.lineDraft)
+      ?.setData(
+        coordinates.length >= 2
+          ? { type: 'Feature', geometry: { type: 'LineString', coordinates }, properties: {} }
+          : EMPTY,
+      );
   }
 
   private renderDraft(): void {
@@ -296,6 +343,12 @@ export class EditorController {
   }
 
   private onClick(e: MapMouseEvent): void {
+    if (this.store.tool === 'line') {
+      const hit = this.map.queryRenderedFeatures(e.point, { layers: ['editor-nodes'] })[0];
+      const id = hit?.properties.id as Id | undefined;
+      if (id) this.store.addStop(id);
+      return;
+    }
     if (this.store.tool === 'draw') {
       this.draft.push(this.pointAt(e));
       this.renderDraft();
@@ -320,9 +373,9 @@ export class EditorController {
       this.map.getCanvas().style.cursor = this.hover.snap ? 'pointer' : 'crosshair';
       this.renderDraft();
     } else {
-      const hit =
-        this.map.queryRenderedFeatures(e.point, { layers: ['editor-nodes', 'editor-segments'] })
-          .length > 0;
+      const layers =
+        this.store.tool === 'line' ? ['editor-nodes'] : ['editor-nodes', 'editor-segments'];
+      const hit = this.map.queryRenderedFeatures(e.point, { layers }).length > 0;
       this.map.getCanvas().style.cursor = hit ? 'pointer' : '';
     }
   }

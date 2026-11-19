@@ -4,19 +4,23 @@ import { copySelection, pasteFragment } from './clipboard.ts';
 import { History } from './history.ts';
 import { EMPTY_NETWORK, NetworkSchema, type Network, type Position } from './model.ts';
 import {
+  addLine,
   addNode,
   addSegment,
+  departuresPerDay,
   insertNodeOnSegment,
   mergeAtNode,
   moveNode,
   NetworkError,
   projectOnPath,
   randomId,
+  removeLine,
   removeNode,
   removeSegment,
   segmentPath,
   segmentsAt,
   splitSegment,
+  updateLine,
   updateNode,
   updateSegment,
   type IdFactory,
@@ -303,5 +307,68 @@ describe('copier-coller', () => {
       [0, 0],
     );
     expect(partial.segmentIds).toEqual([]);
+  });
+});
+
+describe('lignes commerciales', () => {
+  const input = {
+    name: 'Paris – Lille',
+    code: 'K1',
+    color: '#c8102e',
+    stock: 'regional-electrique',
+    stops: ['n_000001', 'n_000003'],
+    headwayMin: 60,
+    firstDepartureMin: 6 * 60,
+    lastDepartureMin: 22 * 60,
+  };
+
+  it('crée, modifie et supprime une ligne entre gares', () => {
+    const { network, ids } = line();
+    const added = addLine(network, input, { ids });
+    expect(added.line.id).toMatch(/^l_/);
+    expect(NetworkSchema.safeParse(added.network).success).toBe(true);
+    const faster = updateLine(added.network, added.line.id, { headwayMin: 30 });
+    expect(faster.lines[added.line.id]?.headwayMin).toBe(30);
+    expect(removeLine(faster, added.line.id).lines).toEqual({});
+    expect(departuresPerDay(input)).toBe(17);
+  });
+
+  it('refuse les arrêts hors gare ou répétés et les horaires incohérents', () => {
+    const { network, ids } = line();
+    expect(() => addLine(network, { ...input, stops: ['n_000001', 'n_000002'] }, { ids })).toThrow(
+      /qu’en gare/,
+    );
+    expect(() => addLine(network, { ...input, stops: ['n_000001'] }, { ids })).toThrow(
+      /deux gares/,
+    );
+    expect(() => addLine(network, { ...input, stops: ['n_000001', 'n_000001'] }, { ids })).toThrow(
+      /identiques/,
+    );
+    const { line: l, network: withLine } = addLine(network, input, { ids });
+    expect(() => updateLine(withLine, l.id, { lastDepartureMin: 60 })).toThrow(/précède/);
+    expect(() => updateLine(withLine, 'l_absent1', {})).toThrow(/inexistante/);
+    expect(() => removeLine(withLine, 'l_absent1')).toThrow(/inexistante/);
+  });
+
+  it('retire l’arrêt d’une gare supprimée ou déclassée, et la ligne réduite à un arrêt', () => {
+    const { network: base, ids } = line();
+    const network = updateNode(base, 'n_000002', {
+      station: { type: 'halte', platforms: 2, terminus: false },
+    });
+    const { line: l, network: withLine } = addLine(
+      network,
+      { ...input, stops: ['n_000001', 'n_000002', 'n_000003'] },
+      { ids },
+    );
+    const declassed = updateNode(withLine, 'n_000002', { station: undefined });
+    expect(declassed.lines[l.id]?.stops).toEqual(['n_000001', 'n_000003']);
+    expect(NetworkSchema.safeParse(declassed).success).toBe(true);
+    expect(removeNode(declassed, 'n_000003').lines).toEqual({});
+  });
+
+  it('relit les réseaux antérieurs aux lignes', () => {
+    const { network } = line();
+    const { lines: _lines, ...legacy } = network;
+    expect(NetworkSchema.parse(legacy).lines).toEqual({});
   });
 });
