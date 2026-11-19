@@ -3,3 +3,4 @@ export * from './elevation.ts';
 export * from './alignment.ts';
 export * from './profile.ts';
 export * from './costs.ts';
+export * from './compatibility.ts';

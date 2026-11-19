@@ -4,6 +4,7 @@
   import { theme } from './lib/theme.svelte.ts';
   import Landing from './pages/Landing.svelte';
   import NotFound from './pages/NotFound.svelte';
+  import RollingStockPage from './pages/RollingStockPage.svelte';
 
   // La carte (MapLibre, ≈ 250 kB compressés) n'est chargée qu'à la demande.
   const loadMapPage = () => import('./pages/MapPage.svelte');
@@ -13,7 +14,10 @@
   });
 
   $effect(() => {
-    const titles: Record<string, string> = { [ROUTES.map]: t('map.title') };
+    const titles: Record<string, string> = {
+      [ROUTES.map]: t('map.title'),
+      [ROUTES.rollingStock]: t('rollingStock.title'),
+    };
     const page = titles[router.path];
     document.title = page ? `${page} · ${t('app.name')}` : t('app.name');
   });
@@ -27,6 +31,8 @@
   {:then { default: MapPage }}
     <MapPage />
   {/await}
+{:else if router.path === ROUTES.rollingStock}
+  <RollingStockPage />
 {:else}
   <NotFound />
 {/if}
