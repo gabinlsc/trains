@@ -179,6 +179,11 @@ test('créer une ligne commerciale entre deux gares et choisir son matériel', a
   await settings.getByLabel('Matériel').selectOption({ label: 'Autorail thermique' });
   await settings.getByLabel('Cadence').selectOption({ label: 'toutes les 30 min' });
   await expect(settings).toContainText('33 départs par jour et par sens');
+  await expect(settings).toContainText(/Temps de parcours : \d+ (min|h)/);
+  await expect(settings).toContainText(/Parc : \d+ rame\(s\)/);
+  await expect(settings.getByRole('list', { name: 'Horaire du premier train' })).toContainText(
+    '06:00',
+  );
   await expect(page.getByRole('button', { name: 'Annuler (Ctrl+Z)' })).toHaveAttribute(
     'title',
     'Annuler : Modifier la ligne',

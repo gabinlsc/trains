@@ -175,6 +175,9 @@ export const fr = {
     summary: '{km} km · {departures} départs par jour et par sens',
     unreachable: 'Gares non reliées par le réseau : {stops}.',
     delete: 'Supprimer la ligne',
+    trip: 'Temps de parcours : {duration} · {speed} km/h de moyenne',
+    fleet: 'Parc : {count} rame(s) ({price}) · exploitation {operating} par an',
+    timetable: 'Horaire du premier train',
     issues: {
       gauge: 'Ce matériel n’a pas l’écartement de certains tronçons.',
       power:

@@ -22,6 +22,9 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   itinéraire calculé sur le réseau, indice, couleur, matériel, cadence et
   amplitude horaire ; lignes dessinées sur la carte, gares non reliées et
   matériel incompatible signalés.
+- Marches types : temps de parcours selon la voie, les courbes et les
+  performances du matériel, horaire des gares, vitesse moyenne, parc de
+  rames nécessaire et coût d'exploitation annuel de chaque ligne.
 
 ### Corrigé
 
