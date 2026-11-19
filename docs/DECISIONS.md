@@ -500,3 +500,27 @@ antérieures restent valides sans migration.
 **Conséquences.** Toute opération sur les lignes passe par l'historique.
 Un intervalle non relié ou un matériel incompatible est signalé sans
 bloquer la saisie, pour laisser construire la voie après coup.
+
+## ADR-028 — Marches types en deux passes, marge forfaitaire
+
+**Contexte.** Le temps de parcours conditionne la demande et le parc de
+rames ; il doit réagir au tracé (courbes), à la voie (vitesse, signalisation)
+et au matériel (puissance, freinage), et se recalculer à chaque
+modification.
+
+**Décision.** Le parcours est discrétisé (pas de 50 m). La vitesse limite en
+chaque point est la plus faible de la vitesse permise par le tronçon
+(compatibilité du matériel), de celle du rayon local de la courbe, et du
+matériel ; elle s'applique sur toute la longueur du train. Une passe avant
+applique l'accélération, bornée par l'adhérence puis par la puissance
+(a = P / m·v) ; une passe arrière la décélération de service. Les
+déclivités et la résistance à l'avancement sont couvertes par une marge de
+régularité de 5 %. Les arrêts durent de 45 s (halte) à 3 min (gare TGV), et
+le parc se déduit d'un aller-retour avec 10 min de battement à chaque
+terminus.
+
+**Conséquences.** 430 km de LGV en ligne droite à 320 km/h se parcourent
+en 1 h 27, marge comprise ; les courbes, les sections à vitesse réduite et
+les arrêts allongent ensuite le trajet comme sur une ligne réelle. Les
+rampes seront prises en compte quand le profil en long sera disponible pour
+tous les tronçons.

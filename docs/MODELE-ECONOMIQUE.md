@@ -125,6 +125,17 @@ Chaque poste coûte chaque année une part de son investissement :
 Une ligne nouvelle coûte ainsi de l'ordre de 1 à 1,5 % de son
 investissement par an.
 
+## Exploitation des lignes
+
+- **Parc** : nombre de rames pour tenir la cadence, d'après un aller-retour
+  (marche type, marge de 5 %, arrêts) et 10 minutes de battement à chaque
+  terminus. Son prix est celui du catalogue (de 4,5 M€ pour un autorail à
+  32 M€ pour une rame à grande vitesse à deux niveaux).
+- **Exploitation** : coût par train-kilomètre du matériel (conduite,
+  énergie, entretien des rames, péages forfaitaires), de 9 à 22 €, multiplié
+  par les départs quotidiens des deux sens, la longueur de la ligne et
+  365 jours.
+
 ## Dans l'interface
 
 - L'inspecteur affiche le coût d'une gare, d'une bifurcation, et celui d'un
@@ -141,5 +152,4 @@ investissement par an.
   des cours d'eau ; seuls tunnels et viaducs sont proposés.
 - En montagne, la ligne rouge enchaîne des ouvrages courts plutôt qu'un
   tunnel de base (ADR-022) ; le coût reflète ce tracé, pas l'optimum.
-- Les recettes, l'exploitation des services et le matériel roulant viennent
-  avec les lignes commerciales (phase 3, branches suivantes).
+- Les recettes viennent avec le modèle de demande (phase 3).

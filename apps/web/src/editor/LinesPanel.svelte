@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { lineRoute, routeCompatibility, routeSegments } from '@trains/engine';
+  import { routeCompatibility, routeSegments } from '@trains/engine';
   import {
     departuresPerDay,
     ROLLING_STOCK,
@@ -8,6 +8,8 @@
     type TrackSpec,
   } from '@trains/shared';
   import { t } from '../i18n/index.ts';
+  import { formatMoney } from './money.ts';
+  import { analyseLine, clockTime, formatDuration } from './service.ts';
   import type { EditorStore } from './store.svelte.ts';
 
   let { store }: { store: EditorStore } = $props();
@@ -20,13 +22,15 @@
 
   const details = $derived.by(() => {
     if (!line) return null;
-    const route = lineRoute(store.network, line);
+    const service = analyseLine(store.network, line);
+    const route = service.route;
     const specs = routeSegments(route)
       .map((step) => store.network.segments[step.segment]?.spec)
       .filter((spec): spec is TrackSpec => spec !== undefined);
     const stock = rollingStockById(line.stock);
     return {
       route,
+      service,
       stock,
       compatibility: stock ? routeCompatibility(stock, specs) : null,
       stopNames: line.stops.map((id) => store.network.nodes[id]?.name ?? t('inspector.station')),
@@ -165,9 +169,30 @@
             departures: departuresPerDay(line),
           })}
         </p>
-        <ol class="stops">
+        {#if details.service.tripS !== null && details.service.averageKmh !== null}
+          <p class="figure">
+            {t('lines.trip', {
+              duration: formatDuration(details.service.tripS),
+              speed: Math.round(details.service.averageKmh),
+            })}
+          </p>
+          <p class="muted">
+            {t('lines.fleet', {
+              count: details.service.fleet ?? 0,
+              price: formatMoney(details.service.fleetCostM ?? 0),
+              operating: formatMoney(details.service.operatingCostM ?? 0),
+            })}
+          </p>
+        {/if}
+        <ol class="stops" aria-label={t('lines.timetable')}>
           {#each details.stopNames as name, i (i)}
-            <li>{name}</li>
+            {@const stop = details.service.stops?.[i]}
+            <li>
+              <span>{name}</span>
+              {#if stop}
+                <time>{clockTime(line.firstDepartureMin, stop.departureS)}</time>
+              {/if}
+            </li>
           {/each}
         </ol>
         {#if !details.route.ok}
@@ -288,6 +313,22 @@
 
   .stops {
     padding-left: var(--space-6);
+  }
+
+  .stops li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  time {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+
+  .figure {
+    margin: 0;
+    font-weight: 600;
   }
 
   .muted {
