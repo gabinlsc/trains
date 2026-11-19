@@ -49,6 +49,9 @@
 
   <p class="cta-row">
     <a class="cta" href={ROUTES.map} onclick={handleLinkClick}>{t('landing.openMap')}</a>
+    <a class="secondary" href={ROUTES.rollingStock} onclick={handleLinkClick}
+      >{t('nav.rollingStock')}</a
+    >
   </p>
 
   <ul class="features">
@@ -182,6 +185,12 @@
     color: var(--accent-contrast);
     font-weight: 700;
     text-decoration: none;
+  }
+
+  .secondary {
+    margin-left: var(--space-4);
+    color: var(--text);
+    font-weight: 600;
   }
 
   .cta:hover {

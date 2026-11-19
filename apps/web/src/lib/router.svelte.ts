@@ -5,6 +5,7 @@
 export const ROUTES = {
   home: '/',
   map: '/carte',
+  rollingStock: '/materiel',
 } as const;
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 

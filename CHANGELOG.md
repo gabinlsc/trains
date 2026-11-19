@@ -14,6 +14,10 @@ le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   bifurcations, provision pour études et aléas, entretien annuel ; coûts
   affichés dans l'inspecteur et le profil en long. Documenté dans
   `docs/MODELE-ECONOMIQUE.md`.
+- Catalogue de matériel roulant (grande vitesse, intercités, régional,
+  périurbain, fret ; électrique, thermique, bimode ; voie métrique) et
+  compatibilité avec l'infrastructure : écartement, alimentation, vitesse
+  permise selon la voie et la signalisation. Page « Matériel roulant ».
 
 ### Corrigé
 

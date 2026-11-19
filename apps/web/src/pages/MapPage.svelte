@@ -11,6 +11,9 @@
       <span class="logo" aria-hidden="true"></span>
       {t('app.name')}
     </a>
+    <nav>
+      <a href={ROUTES.rollingStock} onclick={handleLinkClick}>{t('nav.rollingStock')}</a>
+    </nav>
     <ThemeToggle />
   </header>
   <main class="stage">
@@ -25,6 +28,15 @@
     grid-template-rows: auto 1fr;
     height: 100vh;
     height: 100dvh;
+  }
+
+  nav {
+    margin-left: auto;
+  }
+
+  nav a {
+    color: var(--text);
+    font-weight: 600;
   }
 
   .bar {

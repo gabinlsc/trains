@@ -60,3 +60,22 @@ test('les boutons précédent et suivant du navigateur fonctionnent', async ({ p
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Rails de France' })).toBeVisible();
 });
+
+test('le catalogue du matériel roulant présente chaque famille', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Matériel roulant' }).click();
+  await expect(page).toHaveURL(/\/materiel$/);
+  await expect(page).toHaveTitle('Matériel roulant · Rails de France');
+  for (const name of ['Grande vitesse', 'Intercités', 'Régional', 'Périurbain', 'Fret']) {
+    await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
+  }
+  const card = page
+    .getByRole('listitem')
+    .filter({ hasText: 'Rame à grande vitesse à deux niveaux' });
+  await expect(card).toContainText('320 km/h');
+  await expect(card).toContainText('Signalisation en cabine requise');
+  await page.getByRole('link', { name: 'Carte' }).click();
+  await expect(page).toHaveURL(/\/carte$/);
+  expect(errors).toEqual([]);
+});

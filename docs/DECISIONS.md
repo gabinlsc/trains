@@ -460,3 +460,23 @@ sans lui, ouvrages et terrassements sont absents, et l'interface le dit.
 **Conséquences.** Les ordres de grandeur sont vérifiés par les tests (une
 LGV coûte 18 à 30 M€/km hors grands ouvrages). Ajuster un prix ne touche
 qu'une constante et sa ligne de documentation.
+
+## ADR-026 — Catalogue de matériel générique, compatibilité calculée
+
+**Contexte.** Les lignes commerciales exploitent du matériel roulant dont
+les caractéristiques fixent la vitesse, la capacité et le coût
+d'exploitation, et qui ne peut pas circuler partout.
+
+**Décision.** Le catalogue, dans `@trains/shared`, décrit des familles
+génériques (rame à grande vitesse, automotrice régionale, autorail, train
+de fret…) aux caractéristiques typiques du parc français, sans désigner un
+constructeur. Ses identifiants sont persistés et ne changent jamais. Le
+moteur déduit la compatibilité d'un train avec un tronçon : même
+écartement, caténaire acceptée pour un électrique (un bimode passe
+partout), et vitesse permise égale au minimum du train, de la voie et de la
+signalisation, la signalisation latérale plafonnant à 220 km/h sans ERTMS
+niveau 2.
+
+**Conséquences.** Le catalogue est consultable sur `/materiel`. Les
+paramètres dynamiques (puissance, masse, accélération) serviront aux
+marches types.

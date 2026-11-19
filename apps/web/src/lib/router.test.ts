@@ -11,6 +11,6 @@ describe('normalisePath', () => {
   });
 
   it('expose les routes connues', () => {
-    expect(ROUTES).toEqual({ home: '/', map: '/carte' });
+    expect(ROUTES).toEqual({ home: '/', map: '/carte', rollingStock: '/materiel' });
   });
 });
